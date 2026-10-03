@@ -19,25 +19,6 @@ const BANHO_COLORS: Record<string, { bg: string; color: string }> = {
   Diamante: { bg: '#f0f9ff', color: '#0369a1' },
 };
 
-function BanhoIcon({ banho }: { banho: string }) {
-  if (banho === 'Ouro') return (
-    <svg width="10" height="10" viewBox="0 0 10 10" aria-label="Ouro">
-      <circle cx="5" cy="5" r="4.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8"/>
-    </svg>
-  );
-  if (banho === 'Prata') return (
-    <svg width="10" height="10" viewBox="0 0 10 10" aria-label="Prata">
-      <circle cx="5" cy="5" r="4.5" fill="#94a3b8" stroke="#64748b" strokeWidth="0.8"/>
-    </svg>
-  );
-  if (banho === 'Diamante') return (
-    <svg width="10" height="10" viewBox="0 0 12 12" aria-label="Diamante">
-      <polygon points="6,1 11,5 6,11 1,5" fill="#38bdf8" stroke="#0284c7" strokeWidth="0.8"/>
-    </svg>
-  );
-  return null;
-}
-
 interface ItemFabricacao {
   id: string;
   quantidade: number;
@@ -614,9 +595,13 @@ export default function FabricacaoPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', backgroundColor: etapa.bg, borderBottom: `1px solid ${etapa.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <span style={{ fontSize: '11px', fontWeight: '700', color: etapa.cor }}>{grupo.sku}</span>
-                          {grupo.itens[0]?.banho && (() => {
-                            const bs = BANHO_COLORS[grupo.itens[0].banho!] || { bg: '#f1f5f9', color: '#475569' };
-                            return <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: '4px', backgroundColor: bs.bg, color: bs.color }}>{grupo.itens[0].banho}</span>;
+                          {(() => {
+                            const banho = grupo.itens[0]?.banho;
+                            if (!banho) {
+                              return <span style={{ fontSize: '9px', fontWeight: '600', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px dashed #cbd5e1' }}>Sem banho</span>;
+                            }
+                            const bs = BANHO_COLORS[banho] || { bg: '#f1f5f9', color: '#475569' };
+                            return <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: '4px', backgroundColor: bs.bg, color: bs.color }}>{banho}</span>;
                           })()}
                           {grupo.itens[0]?.produto?.imagem_url && (
                             <button
@@ -664,13 +649,6 @@ export default function FabricacaoPage() {
                               <span style={{ flexShrink: 0, fontSize: '10px', fontWeight: '800', color: etapa.cor, minWidth: '16px', textAlign: 'center' }}>
                                 {item.quantidade}
                               </span>
-
-                              {/* Banho ícone */}
-                              {item.banho && (
-                                <span title={item.banho} style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                                  <BanhoIcon banho={item.banho} />
-                                </span>
-                              )}
 
                               {/* Ícone Prestador (só em PRODUÇÃO) */}
                               {etapa.key === 'producao' && (
