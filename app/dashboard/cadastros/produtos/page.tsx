@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FolderOpen, Camera } from 'lucide-react';
+import { FolderOpen, Camera, ChevronDown } from 'lucide-react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
 import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos } from './actions';
@@ -56,6 +56,8 @@ export default function ProdutosPage() {
   const [fotoAmpliada, setFotoAmpliada] = useState<{ src: string; alt: string } | null>(null);
   const [filtroCodigo, setFiltroCodigo] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [codigoAberto, setCodigoAberto] = useState(false);
+  const [codigoBusca, setCodigoBusca] = useState('');
   const [valoresProdutos, setValoresProdutos] = useState<Record<string, number>>({});
   const [produtoItens, setProdutoItens] = useState<Produto | null>(null);
   const [enviandoItens, setEnviandoItens] = useState(false);
@@ -380,13 +382,35 @@ export default function ProdutosPage() {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
         <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Código (SKU)</label>
-          <input
-            type="text"
-            value={filtroCodigo}
-            onChange={e => setFiltroCodigo(e.target.value)}
-            placeholder="Filtrar por código"
-            style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}
-          />
+          <div style={{ position: 'relative' }}>
+            <button type="button" onClick={() => { setCodigoAberto(!codigoAberto); setCodigoBusca(''); }}
+              style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white', color: filtroCodigo ? 'var(--texto)' : 'var(--texto-suave)', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{filtroCodigo || 'Todos os códigos'}</span>
+              <ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
+            </button>
+            {codigoAberto && (
+              <>
+                <div onClick={() => setCodigoAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 19 }} />
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: '2px', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', boxShadow: 'var(--sombra-media)' }}>
+                  <div style={{ padding: '6px', borderBottom: '1px solid var(--borda)' }}>
+                    <input type="text" autoFocus value={codigoBusca} onChange={e => setCodigoBusca(e.target.value)} placeholder="Buscar código..."
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '13px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                    {!codigoBusca.trim() && (
+                      <div onClick={() => { setFiltroCodigo(''); setCodigoAberto(false); }}
+                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', color: 'var(--texto-suave)' }}>Todos os códigos</div>
+                    )}
+                    {(Array.from(new Set(produtos.map(p => p.sku).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' })).filter(c => c.toLowerCase().includes(codigoBusca.trim().toLowerCase()))).map(c => (
+                      <div key={c} onClick={() => { setFiltroCodigo(c); setCodigoAberto(false); }}
+                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', color: 'var(--texto)', backgroundColor: c === filtroCodigo ? 'var(--ouro-suave)' : 'white' }}>{c}</div>
+                    ))}
+                    {(Array.from(new Set(produtos.map(p => p.sku).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' })).filter(c => c.toLowerCase().includes(codigoBusca.trim().toLowerCase()))).length === 0 && <div style={{ padding: '7px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum código encontrado</div>}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Categoria</label>
