@@ -16,11 +16,19 @@ import {
 
 interface Cliente { id: string; nome: string }
 interface Produto { id: string; nome: string; sku: string; categoria: string; banho: string; peso: number; fabricante: string; preco: number }
-interface ItemPedido { id: string; quantidade: number; preco_unitario: number; banho?: string; produtos?: { id: string; nome: string; sku: string; categoria: string } }
+interface ItemPedido { id: string; quantidade: number; preco_unitario: number; banho?: string; etapa_fabricacao?: string | null; produtos?: { id: string; nome: string; sku: string; categoria: string } }
 interface Pedido { id: string; numero_pedido: string; data_pedido: string; status: string; valor_total: number; clientes?: { id: string; nome: string } | null }
 
 const TIPOS = ['Anel', 'Brinco', 'Colar', 'Pulseira', 'Pingente', 'Corrente', 'Aliança', 'Conjunto', 'Tornozeleira', 'Piercing', 'Outro'];
 const BANHOS = ['Ouro', 'Prata', 'Diamante'];
+
+const ETAPA_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
+  montagem_inicial: { label: 'Montagem Inicial', bg: '#eef2ff', color: '#4338ca' },
+  producao:         { label: 'Produção',          bg: '#ecfeff', color: '#0e7490' },
+  preparado_banho:  { label: 'Preparado p/ Banho', bg: '#fffbeb', color: '#b45309' },
+  encartelamento:   { label: 'Encartelamento',    bg: '#f5f3ff', color: '#6d28d9' },
+  enviado_cliente:  { label: 'Envio ao Cliente',  bg: '#ecfdf5', color: '#047857' },
+};
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
   aberto: { label: 'Aberto', bg: '#dbeafe', color: '#1e40af' },
@@ -446,6 +454,7 @@ export default function PedidosPage() {
                               <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Ref.</th>
                               <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Banho</th>
                               <th style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Qtd</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Etapa</th>
                               <th style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>V.Unit</th>
                               <th style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Subtotal</th>
                               <th style={{ padding: '4px 8px', width: '60px' }}></th>
@@ -465,6 +474,14 @@ export default function PedidosPage() {
                                         onChange={e => setEditItemQtd(parseInt(e.target.value) || 1)}
                                         style={{ width: '50px', padding: '2px 4px', border: '1px solid #d97706', borderRadius: '4px', textAlign: 'center', fontSize: '12px' }} />
                                     ) : item.quantidade}
+                                  </td>
+                                  <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
+                                    {(() => {
+                                      const cfg = item.etapa_fabricacao ? ETAPA_CONFIG[item.etapa_fabricacao] : null;
+                                      if (cfg) return <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '10px', backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
+                                      if (p.status === 'fechado' || p.status === 'em_fabricacao') return <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '10px', backgroundColor: '#d1fae5', color: '#065f46' }}>Concluído</span>;
+                                      return <span style={{ color: '#9ca3af' }}>—</span>;
+                                    })()}
                                   </td>
                                   <td style={{ padding: '4px 8px', textAlign: 'right', color: '#374151' }}>
                                     {editing ? (

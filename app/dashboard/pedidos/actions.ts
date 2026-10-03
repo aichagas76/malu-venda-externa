@@ -73,6 +73,7 @@ export async function listarItensPedido(pedidoId: string) {
       preco_unitario,
       subtotal,
       banho,
+      etapa_fabricacao,
       produtos:produto_id (id, nome, sku, categoria)
     `)
     .eq('pedido_id', pedidoId);
