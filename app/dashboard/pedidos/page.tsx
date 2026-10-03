@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ClipboardList } from 'lucide-react';
 import {
   listarPedidos,
   listarClientes,
@@ -25,17 +26,17 @@ const TIPOS = ['Anel', 'Brinco', 'Colar', 'Pulseira', 'Pingente', 'Corrente', 'A
 const BANHOS = ['Ouro', 'Prata', 'Diamante'];
 
 const ETAPA_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  montagem_inicial: { label: 'Montagem Inicial', bg: '#eef2ff', color: '#4338ca' },
-  producao:         { label: 'Produção',          bg: '#ecfeff', color: '#0e7490' },
-  preparado_banho:  { label: 'Preparado p/ Banho', bg: '#fffbeb', color: '#b45309' },
-  encartelamento:   { label: 'Encartelamento',    bg: '#f5f3ff', color: '#6d28d9' },
-  enviado_cliente:  { label: 'Envio ao Cliente',  bg: '#ecfdf5', color: '#047857' },
+  montagem_inicial: { label: 'Montagem Inicial', bg: '#F1F5F9', color: '#334155' },
+  producao:         { label: 'Produção',          bg: '#F1F5F9', color: '#334155' },
+  preparado_banho:  { label: 'Preparado p/ Banho', bg: '#F1F5F9', color: '#334155' },
+  encartelamento:   { label: 'Encartelamento',    bg: '#F1F5F9', color: '#334155' },
+  enviado_cliente:  { label: 'Envio ao Cliente',  bg: 'var(--sucesso-bg)', color: 'var(--sucesso)' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  aberto: { label: 'Aberto', bg: '#dbeafe', color: '#1e40af' },
-  em_fabricacao: { label: 'Em Fabricação', bg: '#fef3c7', color: '#92400e' },
-  fechado: { label: 'Fechado', bg: '#d1fae5', color: '#065f46' },
+  aberto: { label: 'Aberto', bg: 'var(--info-bg)', color: 'var(--info)' },
+  em_fabricacao: { label: 'Em Fabricação', bg: 'var(--atencao-bg)', color: 'var(--atencao)' },
+  fechado: { label: 'Fechado', bg: 'var(--sucesso-bg)', color: 'var(--sucesso)' },
 };
 
 export default function PedidosPage() {
@@ -254,7 +255,7 @@ export default function PedidosPage() {
   }
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '6px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' };
   const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: '10px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const btnSm: React.CSSProperties = { border: 'none', padding: '5px 10px', borderRadius: '5px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s' };
 
@@ -271,16 +272,16 @@ export default function PedidosPage() {
       {/* Header compacto */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '7px', background: 'linear-gradient(135deg, #8b5cf6, #d946ef)', color: 'white', fontSize: '14px' }}>📋</span>
-          <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Pedidos</h1>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', borderRadius: 'var(--raio-sm)', backgroundColor: 'var(--marca)', color: 'var(--ouro-claro)' }}><ClipboardList size={17} strokeWidth={1.75} aria-hidden="true" /></span>
+          <h1 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Pedidos</h1>
           <span style={{ fontSize: '12px', color: '#94a3b8' }}>({pedidos.filter(p => filtroStatus === 'todos' || p.status === filtroStatus).length})</span>
           {/* Filtros de status */}
           <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
             {([
               { key: 'todos',        label: 'Todos',          bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-              { key: 'aberto',       label: 'Aberto',         bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-              { key: 'em_fabricacao',label: 'Em Fabricação',  bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
-              { key: 'fechado',      label: 'Fechado',        bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+              { key: 'aberto',       label: 'Aberto',         bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+              { key: 'em_fabricacao',label: 'Em Fabricação',  bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' },
+              { key: 'fechado',      label: 'Fechado',        bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' },
             ] as { key: string; label: string; bg: string; color: string; border: string }[]).map(({ key, label, bg, color, border }) => (
               <button key={key} onClick={() => setFiltroStatus(key)}
                 style={{
@@ -288,7 +289,7 @@ export default function PedidosPage() {
                   cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
                   backgroundColor: filtroStatus === key ? bg : 'transparent',
                   color: filtroStatus === key ? color : '#94a3b8',
-                  borderColor: filtroStatus === key ? border : '#e2e8f0',
+                  borderColor: filtroStatus === key ? border : 'var(--borda)',
                   boxShadow: filtroStatus === key ? `0 0 0 2px ${border}55` : 'none',
                 }}>
                 {label}
@@ -300,7 +301,7 @@ export default function PedidosPage() {
           <button
             onClick={abrirCompras}
             title="Gerar lista de compras em PDF"
-            style={{ background: 'white', color: '#7c3aed', border: '1px solid #c4b5fd', padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+            style={{ background: 'var(--superficie)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '7px 14px', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
           >
             Lista de compras
           </button>
@@ -309,8 +310,8 @@ export default function PedidosPage() {
           onMouseEnter={() => setHoveredBtn('novo')}
           onMouseLeave={() => setHoveredBtn(null)}
           style={{
-            background: hoveredBtn === 'novo' ? 'linear-gradient(135deg, #7c3aed, #c026d3)' : 'linear-gradient(135deg, #8b5cf6, #d946ef)',
-            color: 'white', border: 'none', padding: '7px 16px', borderRadius: '7px',
+            background: hoveredBtn === 'novo' ? 'var(--acao-hover)' : 'var(--acao)',
+            color: 'white', border: 'none', padding: '7px 16px', borderRadius: 'var(--raio-sm)',
             fontSize: '12px', fontWeight: '600', cursor: 'pointer',
           }}
         >
@@ -321,7 +322,7 @@ export default function PedidosPage() {
 
       {/* Form - Novo Pedido (compacto, em linha) */}
       {editingPedidoId === null && (
-        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid #8b5cf6' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: 'var(--sombra-sutil)', border: '1px solid var(--borda)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid var(--ouro)' }}>
           {error && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', padding: '6px 10px', backgroundColor: '#fef2f2', borderRadius: '5px' }}>{error}</div>}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
@@ -332,7 +333,7 @@ export default function PedidosPage() {
               </select>
             </div>
             <button onClick={handleCriarPedido} disabled={saving}
-              style={{ ...btnSm, backgroundColor: saving ? '#94a3b8' : '#8b5cf6', color: 'white', whiteSpace: 'nowrap', padding: '7px 16px' }}>
+              style={{ ...btnSm, backgroundColor: saving ? 'var(--texto-mudo)' : 'var(--acao)', color: 'white', whiteSpace: 'nowrap', padding: '7px 16px' }}>
               {saving ? 'Criando...' : 'Criar Pedido'}
             </button>
           </div>
@@ -341,10 +342,10 @@ export default function PedidosPage() {
 
       {/* Form - Adicionar Itens (compacto) */}
       {editingPedidoId && (
-        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid #8b5cf6' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: 'var(--sombra-sutil)', border: '1px solid var(--borda)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid var(--ouro)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Adicionando itens em:</span>
-            <span style={{ backgroundColor: '#f5f3ff', color: '#6d28d9', padding: '3px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
+            <span style={{ backgroundColor: 'var(--ouro-suave)', color: 'var(--ouro-escuro)', padding: '3px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
               {pedidos.find(p => p.id === editingPedidoId)?.numero_pedido || '—'}
             </span>
             <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>
@@ -390,9 +391,9 @@ export default function PedidosPage() {
                   <label key={p.id} style={{
                     display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '4px 8px',
                     cursor: 'pointer', borderRadius: '5px', border: '1px solid',
-                    borderColor: selectedProdutos.includes(p.id) ? '#8b5cf6' : '#d1d5db',
-                    backgroundColor: selectedProdutos.includes(p.id) ? '#f5f3ff' : 'white',
-                    color: selectedProdutos.includes(p.id) ? '#6d28d9' : '#374151',
+                    borderColor: selectedProdutos.includes(p.id) ? 'var(--ouro)' : '#d1d5db',
+                    backgroundColor: selectedProdutos.includes(p.id) ? 'var(--ouro-suave)' : 'white',
+                    color: selectedProdutos.includes(p.id) ? 'var(--ouro-escuro)' : '#374151',
                   }}>
                     <input type="checkbox" checked={selectedProdutos.includes(p.id)}
                       onChange={(e) => {
@@ -410,7 +411,7 @@ export default function PedidosPage() {
 
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
             <button onClick={handleAdicionarItens} disabled={saving}
-              style={{ ...btnSm, backgroundColor: saving ? '#94a3b8' : '#8b5cf6', color: 'white', padding: '6px 14px' }}>
+              style={{ ...btnSm, backgroundColor: saving ? 'var(--texto-mudo)' : 'var(--acao)', color: 'white', padding: '6px 14px' }}>
               {saving ? 'Adicionando...' : 'Adicionar Itens'}
             </button>
             <button onClick={() => setEditingPedidoId(null)}
@@ -425,7 +426,7 @@ export default function PedidosPage() {
       <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--borda)' }}>
               <th style={thStyle}>Nº Pedido</th>
               <th style={thStyle}>Data</th>
               <th style={thStyle}>Cliente</th>
@@ -443,10 +444,10 @@ export default function PedidosPage() {
                     onMouseLeave={() => setHoveredRow(null)}
                     style={{ backgroundColor: hoveredRow === p.id ? '#fafafa' : 'white', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.1s' }}
                   >
-                    <td style={{ padding: '7px 12px', fontSize: '13px', fontWeight: '600', color: '#8b5cf6' }}>
+                    <td style={{ padding: '7px 12px', fontSize: '13px', fontWeight: '600', color: 'var(--acao)' }}>
                       {p.numero_pedido}
                     </td>
-                    <td style={{ padding: '7px 12px', fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '7px 12px', fontSize: '12px', color: 'var(--texto-suave)', whiteSpace: 'nowrap' }}>
                       {p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}
                     </td>
                     <td style={{ padding: '7px 12px', fontSize: '12px', color: '#374151' }}>
@@ -480,7 +481,7 @@ export default function PedidosPage() {
                         <button
                           onClick={() => handleExpandirPedido(p.id)}
                           title={expandedPedido === p.id ? 'Ocultar itens' : 'Ver itens'}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '28px', borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: expandedPedido === p.id ? '#e0e7ff' : 'transparent', borderColor: '#e0e7ff', color: '#4f46e5' }}>
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '28px', borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: expandedPedido === p.id ? 'var(--acao-suave)' : 'transparent', borderColor: 'var(--borda-forte)', color: 'var(--acao)' }}>
                           {expandedPedido === p.id ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
@@ -530,7 +531,7 @@ export default function PedidosPage() {
                               return (
                                 <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: editing ? '#fefce8' : 'transparent' }}>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>{item.produtos?.categoria || '—'}</td>
-                                  <td style={{ padding: '4px 8px', fontWeight: '600', color: '#6366f1' }}>{item.produtos?.sku || '—'}</td>
+                                  <td style={{ padding: '4px 8px', fontWeight: '600', color: 'var(--acao)' }}>{item.produtos?.sku || '—'}</td>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>
                                     {editing ? (
                                       <select value={editItemBanho} onChange={e => setEditItemBanho(e.target.value)}
@@ -551,7 +552,7 @@ export default function PedidosPage() {
                                     {(() => {
                                       const cfg = item.etapa_fabricacao ? ETAPA_CONFIG[item.etapa_fabricacao] : null;
                                       if (cfg) return <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '10px', backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
-                                      if (p.status === 'fechado' || p.status === 'em_fabricacao') return <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '10px', backgroundColor: '#d1fae5', color: '#065f46' }}>Concluído</span>;
+                                      if (p.status === 'fechado' || p.status === 'em_fabricacao') return <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '10px', backgroundColor: 'var(--sucesso-bg)', color: 'var(--sucesso)' }}>Concluído</span>;
                                       return <span style={{ color: '#9ca3af' }}>—</span>;
                                     })()}
                                   </td>
@@ -606,8 +607,8 @@ export default function PedidosPage() {
               <tr>
                 <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center' }}>
                   <div style={{ color: '#94a3b8' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.5 }}>📋</div>
-                    <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 2px 0', fontWeight: '500' }}>Nenhum pedido cadastrado</p>
+                    <div style={{ marginBottom: '8px', opacity: 0.5, display: 'flex', justifyContent: 'center', color: 'var(--texto-suave)' }}><ClipboardList size={32} strokeWidth={1.25} aria-hidden="true" /></div>
+                    <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 2px 0', fontWeight: '500' }}>Nenhum pedido cadastrado</p>
                     <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Clique em &quot;+ Novo Pedido&quot; para começar</p>
                   </div>
                 </td>
@@ -621,9 +622,9 @@ export default function PedidosPage() {
         <div onClick={() => !gerandoPdf && setShowCompras(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '22px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>Lista de compras</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '22px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 4px' }}>Lista de compras</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
               Soma os itens (componentes) de todos os produtos dos pedidos escolhidos, agrupados por fornecedor.
             </p>
 
@@ -641,7 +642,7 @@ export default function PedidosPage() {
               <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{erroCompras}</div>
             )}
 
-            {carregandoCompras && <p style={{ fontSize: '13px', color: '#64748b' }}>Calculando...</p>}
+            {carregandoCompras && <p style={{ fontSize: '13px', color: 'var(--texto-suave)' }}>Calculando...</p>}
 
             {!carregandoCompras && statusCompras.length === 0 && (
               <p style={{ fontSize: '13px', color: '#b45309' }}>Selecione ao menos um tipo de pedido.</p>
@@ -649,13 +650,13 @@ export default function PedidosPage() {
 
             {!carregandoCompras && listaCompras && (
               <>
-                <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--texto-suave)', margin: '0 0 10px' }}>
                   {listaCompras.pedidos.length} pedido(s) considerado(s)
                   {listaCompras.pedidos.length > 0 && <>: {listaCompras.pedidos.map(p => p.numero).join(', ')}</>}
                 </p>
 
                 {listaCompras.grupos.length === 0 && (
-                  <div style={{ padding: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#475569', marginBottom: '12px' }}>
+                  <div style={{ padding: '14px', backgroundColor: '#f8fafc', border: '1px solid var(--borda)', borderRadius: '8px', fontSize: '13px', color: '#475569', marginBottom: '12px' }}>
                     {listaCompras.pedidos.length === 0
                       ? 'Nenhum pedido encontrado com os status escolhidos.'
                       : 'Nenhum item a comprar: os produtos desses pedidos ainda não têm itens vinculados (Cadastros > Produtos > ícone de caixa).'}
@@ -663,11 +664,11 @@ export default function PedidosPage() {
                 )}
 
                 {listaCompras.grupos.map(g => (
-                  <div key={g.fornecedor?.id || 'sem'} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
-                    <div style={{ padding: '8px 12px', backgroundColor: g.fornecedor ? '#ecfeff' : '#fffbeb', fontSize: '13px', fontWeight: '700', color: g.fornecedor ? '#0e7490' : '#b45309' }}>
+                  <div key={g.fornecedor?.id || 'sem'} style={{ border: '1px solid var(--borda)', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '8px 12px', backgroundColor: g.fornecedor ? 'var(--acao-suave)' : 'var(--atencao-bg)', fontSize: '13px', fontWeight: '700', color: g.fornecedor ? 'var(--acao)' : 'var(--atencao)' }}>
                       {g.fornecedor ? g.fornecedor.nome : 'Sem fornecedor definido'}
                       {g.fornecedor && (g.fornecedor.telefone || g.fornecedor.email) && (
-                        <span style={{ fontWeight: '400', color: '#64748b', marginLeft: '10px', fontSize: '12px' }}>
+                        <span style={{ fontWeight: '400', color: 'var(--texto-suave)', marginLeft: '10px', fontSize: '12px' }}>
                           {[g.fornecedor.telefone, g.fornecedor.email].filter(Boolean).join(' | ')}
                         </span>
                       )}
@@ -675,7 +676,7 @@ export default function PedidosPage() {
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '480px' }}>
                         <thead>
-                          <tr style={{ color: '#64748b', textAlign: 'left' }}>
+                          <tr style={{ color: 'var(--texto-suave)', textAlign: 'left' }}>
                             <th style={{ padding: '6px 12px' }}>Item</th>
                             <th style={{ padding: '6px 8px' }}>Un.</th>
                             <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qtd. a comprar</th>
@@ -686,16 +687,16 @@ export default function PedidosPage() {
                         <tbody>
                           {g.itens.map(i => (
                             <tr key={i.itemId} style={{ borderTop: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 12px', color: '#1e293b' }}>{i.nome}</td>
+                              <td style={{ padding: '6px 12px', color: 'var(--texto)' }}>{i.nome}</td>
                               <td style={{ padding: '6px 8px', color: '#475569' }}>{UNIDADE_ROTULO[i.unidade] || i.unidade}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: '700', color: '#1e293b' }}>{formatarQuantidade(i.quantidade)}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: '700', color: 'var(--texto)' }}>{formatarQuantidade(i.quantidade)}</td>
                               <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569' }}>{formatarMoeda(i.valorUnitario)}</td>
                               <td style={{ padding: '6px 12px', textAlign: 'right', color: '#475569' }}>{formatarMoeda(i.subtotal)}</td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr style={{ borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+                          <tr style={{ borderTop: '1px solid var(--borda)', backgroundColor: '#f8fafc' }}>
                             <td colSpan={4} style={{ padding: '6px 12px', textAlign: 'right', fontWeight: '700', color: '#334155' }}>Total do fornecedor</td>
                             <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: '700', color: '#334155' }}>{formatarMoeda(g.total)}</td>
                           </tr>
@@ -706,7 +707,7 @@ export default function PedidosPage() {
                 ))}
 
                 {listaCompras.grupos.length > 0 && (
-                  <p style={{ textAlign: 'right', fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: '0 0 12px' }}>
+                  <p style={{ textAlign: 'right', fontSize: '14px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 12px' }}>
                     Total geral estimado: {formatarMoeda(listaCompras.total)}
                   </p>
                 )}
@@ -722,11 +723,11 @@ export default function PedidosPage() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowCompras(false)} disabled={gerandoPdf}
-                style={{ padding: '10px 18px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                style={{ padding: '10px 18px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
                 Fechar
               </button>
               <button onClick={handleBaixarPdf} disabled={gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0}
-                style={{ padding: '10px 18px', backgroundColor: '#7c3aed', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px',
+                style={{ padding: '10px 18px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px',
                   cursor: gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0 ? 'not-allowed' : 'pointer',
                   opacity: gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0 ? 0.5 : 1 }}>
                 {gerandoPdf ? 'Gerando PDF...' : 'Baixar PDF'}

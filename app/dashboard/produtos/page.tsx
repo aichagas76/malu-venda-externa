@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Gem, Camera } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { listarProdutos, criarProduto, editarProduto, deletarProduto } from './actions';
 
@@ -146,7 +147,7 @@ export default function ProdutosPage() {
   }
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: '700', color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' };
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '2px solid var(--borda)', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' };
   const thStyle: React.CSSProperties = { padding: '14px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' };
 
   if (loading) {
@@ -162,13 +163,13 @@ export default function ProdutosPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: '700', color: 'var(--texto)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #10b981, #34d399)', color: 'white', fontSize: '20px' }}>
-              💍
+              <Gem size={22} strokeWidth={1.75} aria-hidden="true" />
             </span>
             Produtos
           </h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+          <p style={{ color: 'var(--texto-suave)', fontSize: '14px', marginTop: '4px' }}>
             {produtos.length} {produtos.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}
           </p>
         </div>
@@ -213,13 +214,13 @@ export default function ProdutosPage() {
                 {fotoPreview ? (
                   <img src={fotoPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <span style={{ fontSize: '36px', opacity: 0.4 }}>📷</span>
+                  <span style={{ opacity: 0.4, display: 'inline-flex' }}><Camera size={36} strokeWidth={1.75} aria-hidden="true" /></span>
                 )}
                 {uploading && (
                   <div style={{
                     position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.8)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '12px', fontWeight: '600', color: '#6366f1',
+                    fontSize: '12px', fontWeight: '600', color: 'var(--acao)',
                   }}>
                     Enviando...
                   </div>
@@ -243,12 +244,12 @@ export default function ProdutosPage() {
                   onMouseLeave={() => setHoveredBtn(null)}
                   style={{
                     padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600',
-                    cursor: 'pointer', border: '2px solid #6366f1', transition: 'all 0.15s',
-                    backgroundColor: hoveredBtn === 'foto' ? '#6366f1' : 'white',
-                    color: hoveredBtn === 'foto' ? 'white' : '#6366f1',
+                    cursor: 'pointer', border: '2px solid var(--acao)', transition: 'all 0.15s',
+                    backgroundColor: hoveredBtn === 'foto' ? 'var(--acao)' : 'white',
+                    color: hoveredBtn === 'foto' ? 'white' : 'var(--acao)',
                   }}
                 >
-                  📷 Tirar Foto / Escolher
+                  <Camera size={16} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: '4px' }} />Tirar Foto / Escolher
                 </button>
                 {fotoPreview && (
                   <button
@@ -362,7 +363,7 @@ export default function ProdutosPage() {
       <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '2px solid #e2e8f0' }}>
+            <tr style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderBottom: '2px solid var(--borda)' }}>
               <th style={thStyle}>Foto</th>
               <th style={thStyle}>Tipo</th>
               <th style={thStyle}>Ref.</th>
@@ -386,7 +387,7 @@ export default function ProdutosPage() {
                       <img src={p.imagem_url} alt={p.nome} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e5e7eb' }} />
                     ) : (
                       <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', border: '1px solid #fde68a' }}>
-                        💍
+                        <Gem size={20} strokeWidth={1.75} aria-hidden="true" />
                       </div>
                     )}
                   </td>
@@ -399,10 +400,10 @@ export default function ProdutosPage() {
                       <span style={{ color: '#9ca3af', fontSize: '13px' }}>—</span>
                     )}
                   </td>
-                  <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: '600', color: '#6366f1', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: '600', color: 'var(--acao)', fontFamily: 'monospace' }}>
                     {p.sku || '—'}
                   </td>
-                  <td style={{ padding: '10px 16px', fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                  <td style={{ padding: '10px 16px', fontSize: '14px', fontWeight: '600', color: 'var(--texto)' }}>
                     {p.nome}
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: '13px', color: '#374151', textAlign: 'right' }}>
@@ -418,8 +419,8 @@ export default function ProdutosPage() {
                         onMouseEnter={() => setHoveredBtn(`edit-${p.id}`)}
                         onMouseLeave={() => setHoveredBtn(null)}
                         style={{
-                          backgroundColor: hoveredBtn === `edit-${p.id}` ? '#e0e7ff' : 'transparent',
-                          color: '#4f46e5', border: '1px solid #e0e7ff', padding: '6px 10px', borderRadius: '6px',
+                          backgroundColor: hoveredBtn === `edit-${p.id}` ? 'var(--acao-suave)' : 'transparent',
+                          color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '6px 10px', borderRadius: '6px',
                           fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
                         }}
                       >
@@ -445,8 +446,8 @@ export default function ProdutosPage() {
               <tr>
                 <td colSpan={7} style={{ padding: '48px 24px', textAlign: 'center' }}>
                   <div style={{ color: '#94a3b8' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '12px', opacity: 0.5 }}>💍</div>
-                    <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 4px 0', fontWeight: '500' }}>Nenhum produto cadastrado</p>
+                    <div style={{ marginBottom: '12px', opacity: 0.5, display: 'flex', justifyContent: 'center' }}><Gem size={48} strokeWidth={1.75} aria-hidden="true" /></div>
+                    <p style={{ fontSize: '14px', color: 'var(--texto-suave)', margin: '0 0 4px 0', fontWeight: '500' }}>Nenhum produto cadastrado</p>
                     <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>Clique em &quot;+ Novo Produto&quot; para começar</p>
                   </div>
                 </td>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { FolderOpen, Camera } from 'lucide-react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
 import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos } from './actions';
@@ -351,18 +352,18 @@ export default function ProdutosPage() {
     <div style={{ padding: '2rem' }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Produtos</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Produtos</h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button
           onClick={abrirImportar}
-          style={{ padding: '10px 16px', backgroundColor: 'white', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+          style={{ padding: '10px 16px', backgroundColor: 'white', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
           Importar planilha
         </button>
         <button
           onClick={abrirNovoProduto}
           style={{
             padding: '10px 20px',
-            backgroundColor: '#0891b2',
+            backgroundColor: 'var(--acao)',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -384,7 +385,7 @@ export default function ProdutosPage() {
             value={filtroCodigo}
             onChange={e => setFiltroCodigo(e.target.value)}
             placeholder="Filtrar por código"
-            style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}
+            style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}
           />
         </div>
         <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
@@ -392,7 +393,7 @@ export default function ProdutosPage() {
           <select
             value={filtroCategoria}
             onChange={e => setFiltroCategoria(e.target.value)}
-            style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+            style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
             <option value="">Todas as categorias</option>
             {categorias.map(c => (
               <option key={c.id} value={c.nome}>{c.nome}</option>
@@ -403,25 +404,25 @@ export default function ProdutosPage() {
           <button
             type="button"
             onClick={() => { setFiltroCodigo(''); setFiltroCategoria(''); }}
-            style={{ padding: '10px 16px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
+            style={{ padding: '10px 16px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
             Limpar filtros
           </button>
         )}
       </div>
 
       {/* Tabela */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--borda)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Foto</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Categoria</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Código (SKU)</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Peso</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Valor Unitário</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Data de Cadastro</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Ações</th>
+            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--borda)' }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Foto</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Categoria</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Código (SKU)</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Nome</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Peso</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Valor Unitário</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Data de Cadastro</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -433,8 +434,8 @@ export default function ProdutosPage() {
               </tr>
             ) : (
               produtosFiltrados.map((produto) => (
-                <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
+                <tr key={produto.id} style={{ borderBottom: '1px solid var(--borda)' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>
                     {produto.imagem_url ? (
                       <img
                         src={produto.imagem_url}
@@ -447,14 +448,14 @@ export default function ProdutosPage() {
                       '—'
                     )}
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.categoria || '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.sku || '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{produto.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.peso ? `${produto.peso} g` : '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{produto.categoria || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{produto.sku || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto)' }}>{produto.nome}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{produto.peso ? `${produto.peso} g` : '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)', whiteSpace: 'nowrap' }}>
                     {valoresProdutos[produto.id] ? valoresProdutos[produto.id].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>
                     {produto.criado_em ? new Date(produto.criado_em).toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -462,21 +463,21 @@ export default function ProdutosPage() {
                       onClick={() => abrirItens(produto)}
                       title="Itens do produto"
                       aria-label="Itens do produto"
-                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', cursor: 'pointer' }}>
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
                     </button>
                     <button
                       onClick={() => abrirEdicao(produto)}
                       title="Editar"
                       aria-label="Editar"
-                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer' }}>
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                     </button>
                     <button
                       onClick={() => handleDeletar(produto.id)}
                       title="Deletar"
                       aria-label="Deletar"
-                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                     </button>
                   </td>
@@ -492,9 +493,9 @@ export default function ProdutosPage() {
         <div onClick={() => setShowModal(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
 
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 20px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 20px' }}>
               {editando ? 'Editar Produto' : 'Novo Produto'}
             </h2>
 
@@ -503,7 +504,7 @@ export default function ProdutosPage() {
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Foto</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ flex: '1 1 200px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: '#64748b', marginBottom: '4px' }}>📁 Procurar arquivo</label>
+                    <label style={{ fontSize: '11px', fontWeight: '500', color: 'var(--texto-suave)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><FolderOpen size={13} strokeWidth={1.75} aria-hidden="true" /> Procurar arquivo</label>
                     <input
                       type="file"
                       accept="image/*"
@@ -523,30 +524,30 @@ export default function ProdutosPage() {
                         };
                         img.src = url;
                       }}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '12px', boxSizing: 'border-box' }}
                     />
                   </div>
                   <div style={{ flex: '1 1 200px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: '#64748b', marginBottom: '4px' }}>📷 Tirar foto</label>
+                    <label style={{ fontSize: '11px', fontWeight: '500', color: 'var(--texto-suave)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Camera size={13} strokeWidth={1.75} aria-hidden="true" /> Tirar foto</label>
                     <button
                       type="button"
                       onClick={abrirCamera}
-                      style={{ width: '100%', padding: '9px', border: '1px solid #0891b2', backgroundColor: '#ecfeff', color: '#0891b2', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', boxSizing: 'border-box' }}>
+                      style={{ width: '100%', padding: '9px', border: '1px solid var(--acao)', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', boxSizing: 'border-box' }}>
                       Abrir câmera
                     </button>
                   </div>
                 </div>
                 {cameraAberta && (
-                  <div style={{ marginBottom: '8px', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
-                    <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: '6px', backgroundColor: '#000' }} />
+                  <div style={{ marginBottom: '8px', padding: '8px', border: '1px solid var(--borda)', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
+                    <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 'var(--raio-sm)', backgroundColor: '#000' }} />
                     {erroCamera && <p style={{ color: '#dc2626', fontSize: '12px', margin: '6px 0 0' }}>{erroCamera}</p>}
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                       <button type="button" onClick={capturarFoto}
-                        style={{ flex: 1, padding: '8px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
-                        📸 Capturar
+                        style={{ flex: 1, padding: '8px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                        <Camera size={15} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: '6px' }} />Capturar
                       </button>
                       <button type="button" onClick={fecharCamera}
-                        style={{ padding: '8px 14px', backgroundColor: 'white', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                        style={{ padding: '8px 14px', backgroundColor: 'white', color: '#374151', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                         Cancelar
                       </button>
                     </div>
@@ -564,7 +565,7 @@ export default function ProdutosPage() {
                 <select
                   value={formData.categoria}
                   onChange={e => setFormData({ ...formData, categoria: e.target.value })}
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
                   <option value="">Selecione uma categoria</option>
                   {formData.categoria && !categorias.some(c => c.nome === formData.categoria) && (
                     <option value={formData.categoria}>{formData.categoria}</option>
@@ -582,7 +583,7 @@ export default function ProdutosPage() {
                   value={formData.sku}
                   onChange={e => setFormData({ ...formData, sku: e.target.value })}
                   placeholder="Código/SKU do produto"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -593,7 +594,7 @@ export default function ProdutosPage() {
                   value={formData.nome}
                   onChange={e => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Nome do produto"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -604,7 +605,7 @@ export default function ProdutosPage() {
                   value={formData.peso}
                   onChange={e => setFormData({ ...formData, peso: e.target.value })}
                   placeholder="Peso em gramas"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -614,10 +615,10 @@ export default function ProdutosPage() {
                 onClick={() => setShowModal(false)}
                 style={{
                   padding: '10px 20px',
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid var(--borda)',
                   backgroundColor: 'white',
                   color: '#374151',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--raio-sm)',
                   cursor: 'pointer',
                   fontWeight: '600',
                   fontSize: '14px'
@@ -629,10 +630,10 @@ export default function ProdutosPage() {
                 disabled={enviando}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#0891b2',
+                  backgroundColor: 'var(--acao)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--raio-sm)',
                   cursor: enviando ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
                   fontSize: '14px',
@@ -649,7 +650,7 @@ export default function ProdutosPage() {
         <div onClick={() => setFotoAmpliada(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', cursor: 'zoom-out' }}>
           <button type="button" aria-label="Fechar" title="Fechar" onClick={() => setFotoAmpliada(null)}
-            style={{ position: 'absolute', top: '16px', right: '16px', width: '36px', height: '36px', borderRadius: '50%', border: 'none', backgroundColor: 'white', color: '#1e293b', fontSize: '20px', lineHeight: 1, cursor: 'pointer' }}>
+            style={{ position: 'absolute', top: '16px', right: '16px', width: '36px', height: '36px', borderRadius: '50%', border: 'none', backgroundColor: 'white', color: 'var(--texto)', fontSize: '20px', lineHeight: 1, cursor: 'pointer' }}>
             ×
           </button>
           <img src={fotoAmpliada.src} alt={fotoAmpliada.alt} onClick={e => e.stopPropagation()}
@@ -661,15 +662,15 @@ export default function ProdutosPage() {
         <div onClick={() => setProdutoItens(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '520px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>Itens do produto</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '520px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 4px' }}>Itens do produto</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 20px' }}>
               {produtoItens.sku}{produtoItens.nome ? ` · ${produtoItens.nome}` : ''}
             </p>
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
               <select value={novoItemId} onChange={e => setNovoItemId(e.target.value)} aria-label="Item"
-                style={{ flex: 1, minWidth: 0, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' }}>
+                style={{ flex: 1, minWidth: 0, padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', backgroundColor: 'white' }}>
                 <option value="">Selecione um item</option>
                 {itensCatalogo.filter(i => !itensProduto.some(p => p.item_id === i.id)).map(i => (
                   <option key={i.id} value={i.id}>{i.nome}</option>
@@ -678,14 +679,14 @@ export default function ProdutosPage() {
               <input type="number" min="0" step="any" value={novaQtd} onChange={e => setNovaQtd(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') adicionarItem(); }}
                 placeholder="Qtd" aria-label="Quantidade"
-                style={{ width: '80px', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+                style={{ width: '80px', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }} />
               <button type="button" onClick={adicionarItem}
-                style={{ padding: '10px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                style={{ padding: '10px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                 Adicionar
               </button>
             </div>
 
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '16px', overflow: 'hidden' }}>
+            <div style={{ border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', marginBottom: '16px', overflow: 'hidden' }}>
               {itensProduto.length === 0 ? (
                 <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Nenhum item adicionado</div>
               ) : (
@@ -695,7 +696,7 @@ export default function ProdutosPage() {
                   return (
                     <div key={ip.item_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ color: '#1e293b', fontWeight: '500' }}>{item?.nome || 'Item removido'}</div>
+                        <div style={{ color: 'var(--texto)', fontWeight: '500' }}>{item?.nome || 'Item removido'}</div>
                         <div style={{ color: '#94a3b8', fontSize: '11px' }}>
                           {item ? `${UNIDADES_ITEM[item.unidade] || item.unidade} · ${Number(item.valor_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 4 })} · Subtotal ${subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}
                         </div>
@@ -704,11 +705,11 @@ export default function ProdutosPage() {
                         type="number" min="0" step="any" value={ip.quantidade}
                         onChange={e => setItensProduto(prev => prev.map(p => p.item_id === ip.item_id ? { ...p, quantidade: e.target.value } : p))}
                         aria-label="Quantidade do item"
-                        style={{ width: '80px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
+                        style={{ width: '80px', padding: '6px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '13px', boxSizing: 'border-box' }}
                       />
                       <button type="button" title="Remover item" aria-label="Remover item"
                         onClick={() => setItensProduto(prev => prev.filter(p => p.item_id !== ip.item_id))}
-                        style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
+                        style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
                         ×
                       </button>
                     </div>
@@ -718,19 +719,19 @@ export default function ProdutosPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
-              <span style={{ color: '#64748b', fontWeight: '600' }}>Valor unitário do produto</span>
-              <span style={{ color: '#1e293b', fontWeight: '700' }}>
+              <span style={{ color: 'var(--texto-suave)', fontWeight: '600' }}>Valor unitário do produto</span>
+              <span style={{ color: 'var(--texto)', fontWeight: '700' }}>
                 {itensProduto.reduce((total, ip) => total + (Number(itensCatalogo.find(i => i.id === ip.item_id)?.valor_unitario) || 0) * (parseFloat(ip.quantidade) || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </span>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setProdutoItens(null)}
-                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={salvarItens} disabled={enviandoItens}
-                style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: enviandoItens ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviandoItens ? 0.6 : 1 }}>
+                style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: enviandoItens ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviandoItens ? 0.6 : 1 }}>
                 {enviandoItens ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
@@ -742,9 +743,9 @@ export default function ProdutosPage() {
         <div onClick={() => !importando && setShowImportar(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px' }}>Importar produtos por planilha</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 6px' }}>Importar produtos por planilha</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
               Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Foto</b>, <b>Categoria</b>, <b>Código</b>, <b>Nome</b> e <b>Peso</b> (em gramas).
               Só o <b>Código</b> é obrigatório. Na coluna <b>Foto</b>, coloque o <b>link</b> da imagem (http...) ou o <b>nome do arquivo</b> (como no AppSheet: <b>Produto_Images/foto.jpg</b>) e envie as fotos abaixo, em .zip ou soltas.
             </p>
@@ -768,26 +769,26 @@ export default function ProdutosPage() {
               <>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
                   <button type="button" onClick={() => baixarModeloProdutos()}
-                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                     Baixar modelo (.xlsx)
                   </button>
-                  <label style={{ padding: '9px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                  <label style={{ padding: '9px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                     Escolher arquivo
                     <input type="file" accept=".xlsx,.csv,.txt" onChange={handleArquivo} style={{ display: 'none' }} />
                   </label>
-                  {nomeArquivo && <span style={{ fontSize: '12px', color: '#64748b' }}>{nomeArquivo}</span>}
+                  {nomeArquivo && <span style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{nomeArquivo}</span>}
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
-                  <label style={{ padding: '9px 14px', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #f59e0b', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                  <label style={{ padding: '9px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                     Escolher fotos (.zip ou imagens)
                     <input type="file" multiple accept=".zip,image/*" onChange={handleFotos} style={{ display: 'none' }} />
                   </label>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>{resumoFotos || 'Opcional. Só necessário se a coluna Foto tiver nomes de arquivo.'}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{resumoFotos || 'Opcional. Só necessário se a coluna Foto tiver nomes de arquivo.'}</span>
                 </div>
 
                 {erroImport && (
-                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
                     {erroImport}
                   </div>
                 )}
@@ -805,17 +806,17 @@ export default function ProdutosPage() {
                         Categorias novas que serão cadastradas: <b>{categoriasNovas.join(', ')}</b>
                       </p>
                     )}
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '300px', overflow: 'auto', marginBottom: '16px' }}>
+                    <div style={{ border: '1px solid var(--borda)', borderRadius: '8px', maxHeight: '300px', overflow: 'auto', marginBottom: '16px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '640px' }}>
                         <thead>
                           <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Linha</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Foto</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Categoria</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Código</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Nome</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Peso</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Situação</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Linha</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Foto</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Categoria</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Código</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Nome</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Peso</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Situação</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -824,7 +825,7 @@ export default function ProdutosPage() {
                               <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{l.linha}</td>
                               <td style={{ padding: '6px 10px', color: l.fotoFaltando ? '#b45309' : '#475569' }}>{l.fotoTipo === 'link' ? 'Link' : l.fotoTipo === 'arquivo' ? (l.fotoFaltando ? 'Sem arquivo' : 'Arquivo ✓') : '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.categoria || '—'}{l.categoriaNova ? ' (nova)' : ''}</td>
-                              <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: '600' }}>{l.codigo || '—'}</td>
+                              <td style={{ padding: '6px 10px', color: 'var(--texto)', fontWeight: '600' }}>{l.codigo || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.nome || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.peso !== null ? `${l.peso} g` : '—'}</td>
                               <td style={{ padding: '6px 10px', color: l.situacao === 'ok' ? '#047857' : l.situacao === 'erro' ? '#b91c1c' : '#b45309' }}>
@@ -842,12 +843,12 @@ export default function ProdutosPage() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowImportar(false)} disabled={importando}
-                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
                 {resultadoImport ? 'Fechar' : 'Cancelar'}
               </button>
               {!resultadoImport && (
                 <button onClick={handleImportar} disabled={importando || validas.length === 0}
-                  style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
+                  style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
                   {importando ? (progressoFotos || 'Importando...') : `Importar ${validas.length} produto(s)`}
                 </button>
               )}

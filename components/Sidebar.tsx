@@ -4,14 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useState } from 'react';
+import { LayoutDashboard, ShoppingCart, Factory, ClipboardList, ChevronDown } from 'lucide-react';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/pedidos', label: 'Pedidos', icon: '🛒' },
-  { href: '/dashboard/fabricacao', label: 'Etapas da Produção', icon: '⚙️' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/pedidos', label: 'Pedidos', icon: ShoppingCart },
+  { href: '/dashboard/fabricacao', label: 'Etapas da Produção', icon: Factory },
   {
     label: 'Cadastros',
-    icon: '📋',
+    icon: ClipboardList,
     submenu: [
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
       { href: '/dashboard/cadastros/categorias', label: 'Categorias' },
@@ -32,9 +33,9 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
   return (
     <aside className={`app-sidebar${aberta ? ' aberta' : ''}`} style={{
       width: '280px',
-      backgroundColor: '#0f172a',
+      backgroundColor: 'var(--marca)',
       color: 'white',
-      boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+      boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
       display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh',
@@ -55,10 +56,10 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
           />
         </div>
         <p style={{
-          fontSize: '0.875rem',
-          color: '#cbd5e1',
-          fontWeight: '500',
-          letterSpacing: '0.05em',
+          fontSize: 'var(--fs-pequeno)',
+          color: 'var(--ouro-claro)',
+          fontWeight: '600',
+          letterSpacing: '0.18em',
           marginTop: '0.5rem'
         }}>
           VENDAS EXTERNA
@@ -92,8 +93,8 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
                     padding: '0.875rem 1.25rem',
                     borderRadius: '0.75rem',
                     border: 'none',
-                    backgroundColor: isSubmenuActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                    color: isSubmenuActive ? '#fbbf24' : '#94a3b8',
+                    backgroundColor: isSubmenuActive ? 'var(--ouro-suave)' : 'transparent',
+                    color: isSubmenuActive ? 'var(--ouro-claro)' : '#94a3b8',
                     fontSize: '0.95rem',
                     fontWeight: isSubmenuActive ? '600' : '500',
                     cursor: 'pointer',
@@ -101,9 +102,9 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
                     textAlign: 'left',
                     transition: 'all 0.2s ease'
                   }}>
-                  <span style={{ fontSize: '1.25rem', width: '24px', textAlign: 'center' }}>{item.icon}</span>
+                  <span style={{ width: '24px', display: 'inline-flex', justifyContent: 'center' }}><item.icon size={19} strokeWidth={1.75} aria-hidden="true" /></span>
                   <span style={{ flex: 1 }}>{item.label}</span>
-                  <span style={{ fontSize: '0.75rem', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                  <ChevronDown size={16} strokeWidth={2} aria-hidden="true" style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
 
                 {isExpanded && (
@@ -123,9 +124,9 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
                             padding: '0.625rem 1.25rem',
                             borderRadius: '0.5rem',
                             textDecoration: 'none',
-                            color: isSubActive ? '#fbbf24' : '#94a3b8',
-                            backgroundColor: isSubActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                            borderLeft: isSubActive ? '4px solid #fbbf24' : '4px solid transparent',
+                            color: isSubActive ? 'var(--ouro-claro)' : '#94a3b8',
+                            backgroundColor: isSubActive ? 'var(--ouro-suave)' : 'transparent',
+                            borderLeft: isSubActive ? '4px solid var(--ouro)' : '4px solid transparent',
                             paddingLeft: isSubActive ? 'calc(1.25rem - 4px)' : '1.25rem',
                             fontSize: '0.875rem',
                             fontWeight: isSubActive ? '600' : '500',
@@ -157,15 +158,15 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
                 borderRadius: '0.75rem',
                 transition: 'all 0.3s ease',
                 textDecoration: 'none',
-                color: isActive ? '#fbbf24' : '#94a3b8',
-                backgroundColor: isActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                borderLeft: isActive ? '4px solid #fbbf24' : '4px solid transparent',
+                color: isActive ? 'var(--ouro-claro)' : '#94a3b8',
+                backgroundColor: isActive ? 'var(--ouro-suave)' : 'transparent',
+                borderLeft: isActive ? '4px solid var(--ouro)' : '4px solid transparent',
                 paddingLeft: isActive ? 'calc(1.25rem - 4px)' : '1.25rem',
                 fontWeight: isActive ? '600' : '500',
                 fontSize: '0.95rem'
               }}
             >
-              <span style={{ fontSize: '1.25rem', width: '24px', textAlign: 'center' }}>{item.icon}</span>
+              <span style={{ width: '24px', display: 'inline-flex', justifyContent: 'center' }}><item.icon size={19} strokeWidth={1.75} aria-hidden="true" /></span>
               <span>{item.label}</span>
             </Link>
           );

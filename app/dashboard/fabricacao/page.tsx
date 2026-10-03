@@ -5,13 +5,14 @@ import { listarItensFabricacao, avancarEtapa, voltarEtapa, salvarObservacao, sal
 import { listarPrestadores } from '../cadastros/prestadores/actions';
 import { listarSoldadores } from '../cadastros/soldadores/actions';
 import { listarEncarteladores } from '../cadastros/encarteladores/actions';
+import { Factory, ArrowDownToLine, Check } from 'lucide-react';
 
 const ETAPAS = [
-  { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
-  { key: 'producao',          label: 'Produção',              cor: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
-  { key: 'preparado_banho',   label: 'Preparado p/ Banho',   cor: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  { key: 'encartelamento',    label: 'Encartelamento',        cor: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-  { key: 'enviado_cliente',   label: 'Envio ao Cliente',      cor: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#64748B', bg: '#F8FAFC', border: '#E2E8F0' },
+  { key: 'producao',          label: 'Produção',              cor: '#475569', bg: '#F8FAFC', border: '#E2E8F0' },
+  { key: 'preparado_banho',   label: 'Preparado p/ Banho',   cor: '#334155', bg: '#F8FAFC', border: '#E2E8F0' },
+  { key: 'encartelamento',    label: 'Encartelamento',        cor: '#1E293B', bg: '#F8FAFC', border: '#E2E8F0' },
+  { key: 'enviado_cliente',   label: 'Envio ao Cliente',      cor: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
 ];
 
 const BANHO_COLORS: Record<string, { bg: string; color: string }> = {
@@ -338,10 +339,10 @@ export default function FabricacaoPage() {
         <div onClick={() => setFotoPopup(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', maxWidth: '340px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', maxWidth: '340px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>{fotoPopup.sku}</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--texto)' }}>{fotoPopup.sku}</div>
                 <div style={{ fontSize: '11px', color: '#94a3b8' }}>{fotoPopup.nome}</div>
               </div>
               <button onClick={() => setFotoPopup(null)}
@@ -363,10 +364,10 @@ export default function FabricacaoPage() {
         <div onClick={() => setSoldadorPopup(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                {soldadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconSoldador size={18} /> Saída para Solda</span> : '📥 Retorno da Solda'}
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>
+                {soldadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconSoldador size={18} /> Saída para Solda</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowDownToLine size={18} strokeWidth={1.75} aria-hidden="true" /> Retorno da Solda</span>}
               </h3>
               <button onClick={() => setSoldadorPopup(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
@@ -383,7 +384,7 @@ export default function FabricacaoPage() {
                   <select
                     value={soldadorPopup.nome}
                     onChange={e => setSoldadorPopup({ ...soldadorPopup, nome: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   >
                     <option value="">Selecione um soldador</option>
                     {soldadorPopup.nome && !soldadoresCadastro.some(x => x.nome === soldadorPopup.nome) && (
@@ -406,7 +407,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={soldadorPopup.dataSaida}
                     onChange={e => setSoldadorPopup({ ...soldadorPopup, dataSaida: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -416,7 +417,7 @@ export default function FabricacaoPage() {
               <>
                 <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
                   <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 4px 0' }}>Soldador</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{soldadorPopup.nome}</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--texto)', margin: 0 }}>{soldadorPopup.nome}</p>
                   <p style={{ fontSize: '10px', color: '#94a3b8', margin: '4px 0 0 0' }}>Saiu em {new Date(soldadorPopup.dataSaida).toLocaleDateString('pt-BR')}</p>
                 </div>
 
@@ -426,7 +427,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={soldadorPopup.dataRetorno}
                     onChange={e => setSoldadorPopup({ ...soldadorPopup, dataRetorno: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -434,7 +435,7 @@ export default function FabricacaoPage() {
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setSoldadorPopup(null)}
-                style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
+                style={{ padding: '8px 16px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
                 Cancelar
               </button>
               <button onClick={handleSalvarSoldador}
@@ -451,10 +452,10 @@ export default function FabricacaoPage() {
         <div onClick={() => setEncarteladorPopup(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                {encarteladorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconEncartelador size={18} /> Enviar para Encartelar</span> : '📥 Retorno do Encartelamento'}
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>
+                {encarteladorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconEncartelador size={18} /> Enviar para Encartelar</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowDownToLine size={18} strokeWidth={1.75} aria-hidden="true" /> Retorno do Encartelamento</span>}
               </h3>
               <button onClick={() => setEncarteladorPopup(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
@@ -471,7 +472,7 @@ export default function FabricacaoPage() {
                   <select
                     value={encarteladorPopup.nome}
                     onChange={e => setEncarteladorPopup({ ...encarteladorPopup, nome: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   >
                     <option value="">Selecione um encartelador</option>
                     {encarteladorPopup.nome && !encarteladoresCadastro.some(x => x.nome === encarteladorPopup.nome) && (
@@ -494,7 +495,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={encarteladorPopup.dataSaida}
                     onChange={e => setEncarteladorPopup({ ...encarteladorPopup, dataSaida: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -504,7 +505,7 @@ export default function FabricacaoPage() {
               <>
                 <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
                   <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 4px 0' }}>Encartelador</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{encarteladorPopup.nome}</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--texto)', margin: 0 }}>{encarteladorPopup.nome}</p>
                   <p style={{ fontSize: '10px', color: '#94a3b8', margin: '4px 0 0 0' }}>Saiu em {new Date(encarteladorPopup.dataSaida).toLocaleDateString('pt-BR')}</p>
                 </div>
 
@@ -514,7 +515,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={encarteladorPopup.dataRetorno}
                     onChange={e => setEncarteladorPopup({ ...encarteladorPopup, dataRetorno: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -522,7 +523,7 @@ export default function FabricacaoPage() {
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setEncarteladorPopup(null)}
-                style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
+                style={{ padding: '8px 16px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
                 Cancelar
               </button>
               <button onClick={handleSalvarEncartelador}
@@ -539,10 +540,10 @@ export default function FabricacaoPage() {
         <div onClick={() => setPrestadorPopup(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                {prestadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMontador size={18} /> Saída para Rua</span> : '📥 Retorno da Rua'}
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>
+                {prestadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMontador size={18} /> Saída para Rua</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ArrowDownToLine size={18} strokeWidth={1.75} aria-hidden="true" /> Retorno da Rua</span>}
               </h3>
               <button onClick={() => setPrestadorPopup(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
@@ -559,7 +560,7 @@ export default function FabricacaoPage() {
                   <select
                     value={prestadorPopup.nome}
                     onChange={e => setPrestadorPopup({ ...prestadorPopup, nome: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   >
                     <option value="">Selecione um prestador</option>
                     {prestadorPopup.nome && !prestadoresCadastro.some(x => x.nome === prestadorPopup.nome) && (
@@ -582,7 +583,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={prestadorPopup.dataSaida}
                     onChange={e => setPrestadorPopup({ ...prestadorPopup, dataSaida: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -592,7 +593,7 @@ export default function FabricacaoPage() {
               <>
                 <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
                   <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 4px 0' }}>Prestador</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{prestadorPopup.nome}</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--texto)', margin: 0 }}>{prestadorPopup.nome}</p>
                   <p style={{ fontSize: '10px', color: '#94a3b8', margin: '4px 0 0 0' }}>Saiu em {new Date(prestadorPopup.dataSaida).toLocaleDateString('pt-BR')}</p>
                 </div>
 
@@ -602,7 +603,7 @@ export default function FabricacaoPage() {
                     type="date"
                     value={prestadorPopup.dataRetorno}
                     onChange={e => setPrestadorPopup({ ...prestadorPopup, dataRetorno: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
                   />
                 </div>
               </>
@@ -610,11 +611,11 @@ export default function FabricacaoPage() {
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPrestadorPopup(null)}
-                style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
+                style={{ padding: '8px 16px', border: '1px solid var(--borda)', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
                 Cancelar
               </button>
               <button onClick={handleSalvarPrestador}
-                style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: '#0891b2', color: 'white' }}>
+                style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'var(--acao)', color: 'white' }}>
                 OK
               </button>
             </div>
@@ -624,15 +625,15 @@ export default function FabricacaoPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'linear-gradient(135deg, #0891b2, #6366f1)', color: 'white', fontSize: '13px' }}>⚙️</span>
-        <h1 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Etapas da Produção</h1>
+        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: 'var(--raio-sm)', backgroundColor: 'var(--marca)', color: 'var(--ouro-claro)' }}><Factory size={15} strokeWidth={1.75} aria-hidden="true" /></span>
+        <h1 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Etapas da Produção</h1>
         <span style={{ fontSize: '12px', color: '#94a3b8' }}>({itensFiltrados.length} item(s))</span>
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '10px', marginBottom: '12px', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '10px', marginBottom: '12px', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--borda)' }}>
         <div style={{ width: '120px' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Código</label>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Código</label>
           <div style={{ position: 'relative' }}>
             <input
               type="text"
@@ -653,7 +654,7 @@ export default function FabricacaoPage() {
         </div>
 
         <div style={{ minWidth: '150px' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Etapa</label>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Etapa</label>
           <select value={filtroEtapa} onChange={e => setFiltroEtapa(e.target.value)}
             style={{ width: '100%', padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer', boxSizing: 'border-box' }}>
             <option value="">Todas as etapas</option>
@@ -664,7 +665,7 @@ export default function FabricacaoPage() {
         </div>
 
         <div style={{ minWidth: '160px' }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Status</label>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Status</label>
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as '' | 'prestador' | 'soldador' | 'encartelamento')}
             style={{ width: '100%', padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer', boxSizing: 'border-box' }}>
             <option value="">Todos os status</option>
@@ -676,7 +677,7 @@ export default function FabricacaoPage() {
 
         {(filtroCodigo || filtroEtapa || filtroStatus) && (
           <button onClick={() => { setFiltroCodigo(''); setFiltroEtapa(''); setFiltroStatus(''); }}
-            style={{ padding: '5px 10px', fontSize: '11px', border: '1px solid #94a3b8', borderRadius: '5px', backgroundColor: 'white', color: '#64748b', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}>
+            style={{ padding: '5px 10px', fontSize: '11px', border: '1px solid #94a3b8', borderRadius: '5px', backgroundColor: 'white', color: 'var(--texto-suave)', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}>
             Limpar filtros
           </button>
         )}
@@ -684,8 +685,8 @@ export default function FabricacaoPage() {
 
       {itens.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 24px', color: '#94a3b8' }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px', opacity: 0.4 }}>⚙️</div>
-          <p style={{ fontSize: '14px', fontWeight: '500', color: '#64748b', margin: '0 0 4px' }}>Nenhum item em produção</p>
+          <div style={{ marginBottom: '12px', opacity: 0.4, display: 'flex', justifyContent: 'center', color: 'var(--texto-suave)' }}><Factory size={40} strokeWidth={1.25} aria-hidden="true" /></div>
+          <p style={{ fontSize: '14px', fontWeight: '500', color: 'var(--texto-suave)', margin: '0 0 4px' }}>Nenhum item em produção</p>
           <p style={{ fontSize: '12px', margin: 0 }}>Mude o status de um pedido para &quot;Em Fabricação&quot; para iniciar</p>
         </div>
       ) : (
@@ -718,7 +719,7 @@ export default function FabricacaoPage() {
                           {(() => {
                             const banho = grupo.itens[0]?.banho;
                             if (!banho) {
-                              return <span style={{ fontSize: '9px', fontWeight: '600', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px dashed #cbd5e1' }}>Sem banho</span>;
+                              return <span style={{ fontSize: '9px', fontWeight: '600', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px dashed var(--borda-forte)' }}>Sem banho</span>;
                             }
                             const bs = BANHO_COLORS[banho] || { bg: '#f1f5f9', color: '#475569' };
                             return <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: '4px', backgroundColor: bs.bg, color: bs.color }}>{banho}</span>;
@@ -755,7 +756,7 @@ export default function FabricacaoPage() {
                               {/* Botão voltar */}
                               {!isFirst ? (
                                 <button onClick={() => handleVoltar(item.id, item.etapa_fabricacao)} disabled={busy} title="Voltar etapa"
-                                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '3px', border: '1px solid #e2e8f0', backgroundColor: 'transparent', color: '#94a3b8', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1, padding: 0 }}>
+                                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '3px', border: '1px solid var(--borda)', backgroundColor: 'transparent', color: '#94a3b8', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1, padding: 0 }}>
                                   <IconBack />
                                 </button>
                               ) : <span style={{ width: '18px', flexShrink: 0 }} />}
@@ -820,7 +821,7 @@ export default function FabricacaoPage() {
                                     fontWeight: '700',
                                     opacity: item.prestador_data_retorno ? 0.6 : 1,
                                   }}>
-                                  {item.prestador_data_retorno ? '✓' : <IconMontador size={16} />}
+                                  {item.prestador_data_retorno ? <Check size={14} strokeWidth={2.5} aria-hidden="true" /> : <IconMontador size={16} />}
                                 </button>
                               )}
 
@@ -874,7 +875,7 @@ export default function FabricacaoPage() {
                                     fontWeight: '700',
                                     opacity: item.soldador_data_retorno ? 0.6 : 1,
                                   }}>
-                                  {item.soldador_data_retorno ? '✓' : <IconSoldador size={16} />}
+                                  {item.soldador_data_retorno ? <Check size={14} strokeWidth={2.5} aria-hidden="true" /> : <IconSoldador size={16} />}
                                 </button>
                               )}
 
@@ -928,7 +929,7 @@ export default function FabricacaoPage() {
                                     fontWeight: '700',
                                     opacity: item.encartelador_data_retorno ? 0.6 : 1,
                                   }}>
-                                  {item.encartelador_data_retorno ? '✓' : <IconEncartelador size={16} />}
+                                  {item.encartelador_data_retorno ? <Check size={14} strokeWidth={2.5} aria-hidden="true" /> : <IconEncartelador size={16} />}
                                 </button>
                               )}
 
@@ -955,7 +956,7 @@ export default function FabricacaoPage() {
                                 <IconCheck />
                               </button>
                               <button onClick={() => setEditingObsId(null)}
-                                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '3px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#94a3b8', cursor: 'pointer', padding: 0 }}>
+                                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '3px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#94a3b8', cursor: 'pointer', padding: 0 }}>
                                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             </div>
@@ -978,7 +979,7 @@ export default function FabricacaoPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '1px 4px 3px', borderTop: '1px solid #f1f5f9' }}>
                                 {item.prestador_data_retorno ? (
                                   <>
-                                    <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600' }}>✓ Retornou</span>
+                                    <span style={{ fontSize: '9px', color: 'var(--sucesso)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><Check size={11} strokeWidth={2.5} aria-hidden="true" /> Retornou</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       ({new Date(item.prestador_data_retorno).toLocaleDateString('pt-BR')})
                                     </span>
@@ -999,7 +1000,7 @@ export default function FabricacaoPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '1px 4px 3px', borderTop: '1px solid #f1f5f9' }}>
                                 {item.soldador_data_retorno ? (
                                   <>
-                                    <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600' }}>✓ Retornou</span>
+                                    <span style={{ fontSize: '9px', color: 'var(--sucesso)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><Check size={11} strokeWidth={2.5} aria-hidden="true" /> Retornou</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       ({new Date(item.soldador_data_retorno).toLocaleDateString('pt-BR')})
                                     </span>
@@ -1020,7 +1021,7 @@ export default function FabricacaoPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '1px 4px 3px', borderTop: '1px solid #f1f5f9' }}>
                                 {item.encartelador_data_retorno ? (
                                   <>
-                                    <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600' }}>✓ Retornou</span>
+                                    <span style={{ fontSize: '9px', color: 'var(--sucesso)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><Check size={11} strokeWidth={2.5} aria-hidden="true" /> Retornou</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       ({new Date(item.encartelador_data_retorno).toLocaleDateString('pt-BR')})
                                     </span>

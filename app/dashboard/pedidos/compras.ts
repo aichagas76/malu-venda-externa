@@ -44,7 +44,7 @@ export async function baixarListaComprasPdf(dados: ListaComprasData) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const margem = 14;
   const larguraUtil = doc.internal.pageSize.getWidth() - margem * 2;
-  const cor = { principal: [8, 145, 178] as [number, number, number], suave: [236, 254, 255] as [number, number, number], cinza: [100, 116, 139] as [number, number, number] };
+  const cor = { principal: [15, 23, 42] as [number, number, number], suave: [241, 245, 249] as [number, number, number], cinza: [100, 116, 139] as [number, number, number], ouro: [201, 162, 75] as [number, number, number] };
 
   const geradoEm = new Date(dados.geradoEm);
   const dataTexto = geradoEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' });
@@ -58,6 +58,9 @@ export async function baixarListaComprasPdf(dados: ListaComprasData) {
   doc.setFontSize(10);
   doc.setTextColor(...cor.cinza);
   doc.text(`Malu Folhados - gerada em ${dataTexto}`, margem, 24);
+  doc.setDrawColor(...cor.ouro);
+  doc.setLineWidth(0.6);
+  doc.line(margem, 27, margem + 24, 27);
 
   const statusTexto = dados.statusIncluidos.map(s => STATUS_ROTULO[s] || s).join(' + ');
   const numeros = dados.pedidos.map(p => p.numero).join(', ');
@@ -66,9 +69,9 @@ export async function baixarListaComprasPdf(dados: ListaComprasData) {
     larguraUtil
   );
   doc.setTextColor(30, 41, 59);
-  doc.text(resumo, margem, 31);
+  doc.text(resumo, margem, 33);
 
-  let y = 31 + resumo.length * 5 + 4;
+  let y = 33 + resumo.length * 5 + 4;
   const aposTabela = () => ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y) + 8;
 
   for (const grupo of dados.grupos) {

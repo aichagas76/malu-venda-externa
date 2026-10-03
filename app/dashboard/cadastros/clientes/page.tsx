@@ -75,12 +75,12 @@ export default function ClientesPage() {
     <div style={{ padding: '2rem' }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Clientes</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Clientes</h1>
         <button
           onClick={abrirNovoCliente}
           style={{
             padding: '10px 20px',
-            backgroundColor: '#0891b2',
+            backgroundColor: 'var(--acao)',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -93,14 +93,14 @@ export default function ClientesPage() {
       </div>
 
       {/* Tabela */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--borda)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Telefone</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Data de Cadastro</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Ações</th>
+            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--borda)' }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Nome</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Telefone</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Data de Cadastro</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -112,10 +112,10 @@ export default function ClientesPage() {
               </tr>
             ) : (
               clientes.map((cliente) => (
-                <tr key={cliente.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{cliente.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{cliente.telefone || '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
+                <tr key={cliente.id} style={{ borderBottom: '1px solid var(--borda)' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto)' }}>{cliente.nome}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{cliente.telefone || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>
                     {cliente.data_cadastro ? new Date(cliente.data_cadastro).toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -123,14 +123,14 @@ export default function ClientesPage() {
                       onClick={() => abrirEdicao(cliente)}
                       title="Editar"
                       aria-label="Editar"
-                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer' }}>
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                     </button>
                     <button
                       onClick={() => handleDeletar(cliente.id)}
                       title="Deletar"
                       aria-label="Deletar"
-                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                     </button>
                   </td>
@@ -146,9 +146,9 @@ export default function ClientesPage() {
         <div onClick={() => setShowModal(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
 
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 20px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 20px' }}>
               {editando ? 'Editar Cliente' : 'Novo Cliente'}
             </h2>
 
@@ -160,7 +160,7 @@ export default function ClientesPage() {
                   value={formData.nome}
                   onChange={e => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Nome do cliente"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -171,7 +171,7 @@ export default function ClientesPage() {
                   value={formData.telefone}
                   onChange={e => setFormData({ ...formData, telefone: e.target.value })}
                   placeholder="(00) 00000-0000"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -181,10 +181,10 @@ export default function ClientesPage() {
                 onClick={() => setShowModal(false)}
                 style={{
                   padding: '10px 20px',
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid var(--borda)',
                   backgroundColor: 'white',
                   color: '#374151',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--raio-sm)',
                   cursor: 'pointer',
                   fontWeight: '600',
                   fontSize: '14px'
@@ -196,10 +196,10 @@ export default function ClientesPage() {
                 disabled={enviando}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#0891b2',
+                  backgroundColor: 'var(--acao)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--raio-sm)',
                   cursor: enviando ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
                   fontSize: '14px',

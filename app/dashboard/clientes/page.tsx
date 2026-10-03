@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Users, Check, X, Pencil, Trash2, TriangleAlert } from 'lucide-react';
 import { criarCliente, deletarCliente, listarClientes, editarCliente } from './actions';
 
 interface Cliente {
@@ -105,7 +106,7 @@ export default function ClientesPage() {
           <h1 style={{
             fontSize: '1.75rem',
             fontWeight: '700',
-            color: '#1e293b',
+            color: 'var(--texto)',
             margin: 0,
             display: 'flex',
             alignItems: 'center',
@@ -118,15 +119,15 @@ export default function ClientesPage() {
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white',
+              background: 'var(--marca)',
+              color: 'var(--ouro-claro)',
               fontSize: '1.25rem'
             }}>
-              👥
+              <Users size={22} strokeWidth={1.75} aria-hidden="true" />
             </span>
             Clientes
           </h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: 'var(--texto-suave)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             {clientes.length} {clientes.length === 1 ? 'registro' : 'registros'}
           </p>
         </div>
@@ -136,8 +137,8 @@ export default function ClientesPage() {
           onMouseLeave={() => setHoveredBtn(null)}
           style={{
             background: hoveredBtn === 'novo'
-              ? 'linear-gradient(135deg, #4f46e5, #7c3aed)'
-              : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              ? 'var(--acao-hover)'
+              : 'var(--acao)',
             color: 'white',
             border: 'none',
             padding: '0.75rem 1.5rem',
@@ -165,7 +166,7 @@ export default function ClientesPage() {
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           padding: '1.5rem',
           marginBottom: '1.5rem',
-          borderLeft: '4px solid #6366f1'
+          borderLeft: '4px solid var(--ouro)'
         }}>
           <h3 style={{
             margin: '0 0 1rem 0',
@@ -188,7 +189,7 @@ export default function ClientesPage() {
               alignItems: 'center',
               gap: '0.5rem'
             }}>
-              <span>⚠</span> {error}
+              <span style={{ display: 'inline-flex' }}><TriangleAlert size={16} strokeWidth={1.75} aria-hidden="true" /></span> {error}
             </div>
           )}
           <form onSubmit={handleSubmit} style={{
@@ -205,15 +206,15 @@ export default function ClientesPage() {
               style={{
                 flex: 1,
                 padding: '0.75rem 1rem',
-                border: '2px solid #e2e8f0',
+                border: '2px solid var(--borda)',
                 borderRadius: '0.5rem',
                 fontSize: '0.875rem',
                 outline: 'none',
                 transition: 'border-color 0.2s',
                 backgroundColor: '#f8fafc'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#6366f1'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--ouro)'}
+              onBlur={(e) => e.currentTarget.style.borderColor = 'var(--borda)'}
             />
             <button
               type="submit"
@@ -237,7 +238,7 @@ export default function ClientesPage() {
                 whiteSpace: 'nowrap'
               }}
             >
-              <span>✓</span> {loading ? 'Salvando...' : 'Salvar'}
+              <span style={{ display: 'inline-flex' }}><Check size={16} strokeWidth={1.75} aria-hidden="true" /></span> {loading ? 'Salvando...' : 'Salvar'}
             </button>
             <button
               type="button"
@@ -260,7 +261,7 @@ export default function ClientesPage() {
                 whiteSpace: 'nowrap'
               }}
             >
-              <span>✕</span> Cancelar
+              <span style={{ display: 'inline-flex' }}><X size={16} strokeWidth={1.75} aria-hidden="true" /></span> Cancelar
             </button>
           </form>
         </div>
@@ -280,7 +281,7 @@ export default function ClientesPage() {
           <thead>
             <tr style={{
               background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
-              borderBottom: '2px solid #e2e8f0'
+              borderBottom: '2px solid var(--borda)'
             }}>
               <th style={{
                 padding: '1rem 1.5rem',
@@ -335,7 +336,7 @@ export default function ClientesPage() {
                           width: '100%',
                           maxWidth: '400px',
                           padding: '0.5rem 0.75rem',
-                          border: '2px solid #6366f1',
+                          border: '2px solid var(--ouro)',
                           borderRadius: '0.375rem',
                           fontSize: '0.875rem',
                           outline: 'none',
@@ -352,12 +353,12 @@ export default function ClientesPage() {
                           width: '32px',
                           height: '32px',
                           borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
+                          background: 'var(--acao-suave)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '0.8rem',
-                          color: '#4f46e5',
+                          color: 'var(--acao)',
                           fontWeight: '700',
                           flexShrink: 0
                         }}>
@@ -366,7 +367,7 @@ export default function ClientesPage() {
                         <span style={{
                           fontSize: '0.875rem',
                           fontWeight: '500',
-                          color: '#1e293b'
+                          color: 'var(--texto)'
                         }}>
                           {cliente.nome}
                         </span>
@@ -400,14 +401,14 @@ export default function ClientesPage() {
                               transition: 'all 0.15s'
                             }}
                           >
-                            ✓ Salvar
+                            <Check size={14} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: '4px' }} />Salvar
                           </button>
                           <button
                             onClick={cancelEdit}
                             onMouseEnter={() => setHoveredBtn(`cancel-${cliente.id}`)}
                             onMouseLeave={() => setHoveredBtn(null)}
                             style={{
-                              backgroundColor: hoveredBtn === `cancel-${cliente.id}` ? '#e2e8f0' : '#f1f5f9',
+                              backgroundColor: hoveredBtn === `cancel-${cliente.id}` ? 'var(--borda)' : '#f1f5f9',
                               color: '#475569',
                               border: 'none',
                               padding: '0.375rem 0.875rem',
@@ -421,7 +422,7 @@ export default function ClientesPage() {
                               transition: 'all 0.15s'
                             }}
                           >
-                            ✕ Cancelar
+                            <X size={14} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: '4px' }} />Cancelar
                           </button>
                         </>
                       ) : (
@@ -431,9 +432,9 @@ export default function ClientesPage() {
                             onMouseEnter={() => setHoveredBtn(`edit-${cliente.id}`)}
                             onMouseLeave={() => setHoveredBtn(null)}
                             style={{
-                              backgroundColor: hoveredBtn === `edit-${cliente.id}` ? '#e0e7ff' : 'transparent',
-                              color: '#4f46e5',
-                              border: '1px solid #e0e7ff',
+                              backgroundColor: hoveredBtn === `edit-${cliente.id}` ? 'var(--acao-suave)' : 'transparent',
+                              color: 'var(--acao)',
+                              border: '1px solid var(--borda-forte)',
                               padding: '0.375rem 0.75rem',
                               borderRadius: '0.375rem',
                               fontSize: '0.8rem',
@@ -445,7 +446,7 @@ export default function ClientesPage() {
                               transition: 'all 0.15s'
                             }}
                           >
-                            ✏ Editar
+                            <Pencil size={14} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: '4px' }} />Editar
                           </button>
                           <button
                             onClick={() => handleDelete(cliente.id)}
@@ -466,7 +467,7 @@ export default function ClientesPage() {
                               transition: 'all 0.15s'
                             }}
                           >
-                            🗑 Deletar
+                            <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: '4px' }} />Deletar
                           </button>
                         </>
                       )}
@@ -486,11 +487,11 @@ export default function ClientesPage() {
                       marginBottom: '0.75rem',
                       opacity: 0.5
                     }}>
-                      👥
+                      <Users size={48} strokeWidth={1.75} aria-hidden="true" />
                     </div>
                     <p style={{
                       fontSize: '0.875rem',
-                      color: '#64748b',
+                      color: 'var(--texto-suave)',
                       margin: '0 0 0.25rem 0',
                       fontWeight: '500'
                     }}>

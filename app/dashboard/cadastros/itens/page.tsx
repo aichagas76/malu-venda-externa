@@ -163,32 +163,32 @@ export default function ItensPage() {
     return <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Carregando...</div>;
   }
 
-  const th = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: '600', color: '#64748b' };
-  const campo = { width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' as const, backgroundColor: 'white' };
+  const th = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' };
+  const campo = { width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' as const, backgroundColor: 'white' };
   const rotulo = { display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' };
 
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Itens</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Itens</h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={abrirImportar}
-            style={{ padding: '10px 16px', backgroundColor: 'white', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+            style={{ padding: '10px 16px', backgroundColor: 'white', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
             Importar planilha
           </button>
           <button
             onClick={abrirNovo}
-            style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+            style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
             + Novo Item
           </button>
         </div>
       </div>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--borda)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--borda)' }}>
               <th style={th}>Nome</th>
               <th style={th}>Unidade</th>
               <th style={th}>Valor Unitário</th>
@@ -205,25 +205,25 @@ export default function ItensPage() {
               </tr>
             ) : (
               itens.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{item.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{UNIDADES[item.unidade] || item.unidade}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{moeda(item.valor_unitario)}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{nomeFornecedor(item)}</td>
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--borda)' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto)' }}>{item.nome}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{UNIDADES[item.unidade] || item.unidade}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{moeda(item.valor_unitario)}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{nomeFornecedor(item)}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                       <button
                         onClick={() => abrirEdicao(item)}
                         title="Editar"
                         aria-label="Editar"
-                        style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer' }}>
+                        style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                       </button>
                       <button
                         onClick={() => handleDeletar(item)}
                         title="Deletar"
                         aria-label="Deletar"
-                        style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
+                        style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                       </button>
                     </div>
@@ -239,8 +239,8 @@ export default function ItensPage() {
         <div onClick={() => setShowModal(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '450px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 20px' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '450px', width: '90%', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 20px' }}>
               {editando ? 'Editar Item' : 'Novo Item'}
             </h2>
 
@@ -285,11 +285,11 @@ export default function ItensPage() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)}
-                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSalvar} disabled={enviando}
-                style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: enviando ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviando ? 0.6 : 1 }}>
+                style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: enviando ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviando ? 0.6 : 1 }}>
                 {enviando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
@@ -301,9 +301,9 @@ export default function ItensPage() {
         <div onClick={() => !importando && setShowImportar(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '760px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px' }}>Importar itens por planilha</h2>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '760px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 6px' }}>Importar itens por planilha</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
               Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Nome</b>, <b>Unidade</b> (Metro, Peça ou Serviço), <b>Valor Unitário</b> e <b>Fornecedor</b> (opcional).
             </p>
 
@@ -318,18 +318,18 @@ export default function ItensPage() {
               <>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
                   <button type="button" onClick={() => baixarModelo()}
-                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                     Baixar modelo (.xlsx)
                   </button>
-                  <label style={{ padding: '9px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                  <label style={{ padding: '9px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
                     Escolher arquivo
                     <input type="file" accept=".xlsx,.csv,.txt" onChange={handleArquivo} style={{ display: 'none' }} />
                   </label>
-                  {nomeArquivo && <span style={{ fontSize: '12px', color: '#64748b' }}>{nomeArquivo}</span>}
+                  {nomeArquivo && <span style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{nomeArquivo}</span>}
                 </div>
 
                 {erroImport && (
-                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
                     {erroImport}
                   </div>
                 )}
@@ -346,23 +346,23 @@ export default function ItensPage() {
                         Fornecedores novos que serão cadastrados: <b>{fornecedoresNovos.join(', ')}</b>
                       </p>
                     )}
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '300px', overflow: 'auto', marginBottom: '16px' }}>
+                    <div style={{ border: '1px solid var(--borda)', borderRadius: '8px', maxHeight: '300px', overflow: 'auto', marginBottom: '16px' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '560px' }}>
                         <thead>
                           <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Linha</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Nome</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Unidade</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Valor</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Fornecedor</th>
-                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Situação</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Linha</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Nome</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Unidade</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Valor</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Fornecedor</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Situação</th>
                           </tr>
                         </thead>
                         <tbody>
                           {analise.map(l => (
                             <tr key={l.linha} style={{ borderTop: '1px solid #f1f5f9', backgroundColor: l.situacao === 'erro' ? '#fef2f2' : l.situacao === 'duplicado' ? '#fffbeb' : 'transparent' }}>
                               <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{l.linha}</td>
-                              <td style={{ padding: '6px 10px', color: '#1e293b' }}>{l.nome || '—'}</td>
+                              <td style={{ padding: '6px 10px', color: 'var(--texto)' }}>{l.nome || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.unidade ? UNIDADES[l.unidade] : '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.valor !== null ? moeda(l.valor) : '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.fornecedor || '—'}{l.fornecedorNovo ? ' (novo)' : ''}</td>
@@ -381,12 +381,12 @@ export default function ItensPage() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowImportar(false)} disabled={importando}
-                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
                 {resultadoImport ? 'Fechar' : 'Cancelar'}
               </button>
               {!resultadoImport && (
                 <button onClick={handleImportar} disabled={importando || validas.length === 0}
-                  style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
+                  style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
                   {importando ? 'Importando...' : `Importar ${validas.length} item(ns)`}
                 </button>
               )}

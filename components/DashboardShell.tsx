@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { Menu, Moon, Sun, User } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -35,10 +36,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden' }}>
         <nav className="app-topbar" style={{
-          backgroundColor: '#ffffff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          backgroundColor: 'var(--superficie)',
+          boxShadow: 'var(--sombra-sutil)',
           padding: '1.25rem 2rem',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--borda)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -51,10 +52,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               onClick={() => setMenuAberto(true)}
               aria-label="Abrir menu"
               title="Menu"
-              style={{ width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', color: '#1e293b', cursor: 'pointer', flexShrink: 0 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+              style={{ width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', backgroundColor: 'var(--superficie)', color: 'var(--texto)', cursor: 'pointer', flexShrink: 0 }}>
+              <Menu size={22} strokeWidth={1.75} aria-hidden="true" />
             </button>
-            <div className="app-title" style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', letterSpacing: '-0.5px' }}>
+            <div className="app-title" style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--texto)', letterSpacing: '-0.01em' }}>
               Malu • Sistema de Vendas
             </div>
           </div>
@@ -64,23 +65,19 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               onClick={alternarTema}
               aria-label={tema === 'dark' ? 'Mudar para tela clara' : 'Mudar para tela escura'}
               title={tema === 'dark' ? 'Tela clara' : 'Tela escura'}
-              style={{ width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', color: '#475569', cursor: 'pointer', flexShrink: 0 }}>
-              {tema === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-              )}
+              style={{ width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', backgroundColor: 'var(--superficie)', color: 'var(--texto-suave)', cursor: 'pointer', flexShrink: 0 }}>
+              {tema === 'dark' ? <Sun size={18} strokeWidth={1.75} aria-hidden="true" /> : <Moon size={18} strokeWidth={1.75} aria-hidden="true" />}
             </button>
-            <span className="app-user" style={{ fontSize: '0.875rem', color: '#64748b' }}>👤 Vendedor</span>
+            <span className="app-user" style={{ fontSize: 'var(--fs-corpo)', color: 'var(--texto-suave)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><User size={16} strokeWidth={1.75} aria-hidden="true" /> Vendedor</span>
             <a href="/login" style={{
-              color: '#64748b',
+              color: 'var(--texto-suave)',
               textDecoration: 'none',
-              fontSize: '0.875rem',
+              fontSize: 'var(--fs-corpo)',
               fontWeight: '500',
               padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
+              borderRadius: 'var(--raio-sm)',
               transition: 'all 0.2s',
-              border: '1px solid #e2e8f0'
+              border: '1px solid var(--borda)'
             }}>
               Sair
             </a>
@@ -90,7 +87,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           flex: 1,
           overflowY: 'auto',
           padding: '2rem',
-          backgroundColor: '#f8fafc'
+          backgroundColor: 'var(--fundo)'
         }}>
           {children}
         </main>
