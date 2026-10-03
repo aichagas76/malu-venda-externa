@@ -42,6 +42,8 @@ export default function ProdutosPage() {
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [itensCatalogo, setItensCatalogo] = useState<{ id: string; nome: string; unidade: string; valor_unitario: number }[]>([]);
   const [itensProduto, setItensProduto] = useState<{ item_id: string; quantidade: string }[]>([]);
+  const [filtroCodigo, setFiltroCodigo] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
   const [valoresProdutos, setValoresProdutos] = useState<Record<string, number>>({});
   const [produtoItens, setProdutoItens] = useState<Produto | null>(null);
   const [enviandoItens, setEnviandoItens] = useState(false);
@@ -67,6 +69,11 @@ export default function ProdutosPage() {
     setNovoItemId('');
     setNovaQtd('');
   };
+
+  const produtosFiltrados = produtos.filter(p =>
+    (!filtroCodigo.trim() || (p.sku || '').toLowerCase().includes(filtroCodigo.trim().toLowerCase())) &&
+    (!filtroCategoria || p.categoria === filtroCategoria)
+  );
 
   const abrirItens = (produto: Produto) => {
     setItensProduto([]);
@@ -193,6 +200,40 @@ export default function ProdutosPage() {
         </button>
       </div>
 
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Código (SKU)</label>
+          <input
+            type="text"
+            value={filtroCodigo}
+            onChange={e => setFiltroCodigo(e.target.value)}
+            placeholder="Filtrar por código"
+            style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}
+          />
+        </div>
+        <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Categoria</label>
+          <select
+            value={filtroCategoria}
+            onChange={e => setFiltroCategoria(e.target.value)}
+            style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+            <option value="">Todas as categorias</option>
+            {categorias.map(c => (
+              <option key={c.id} value={c.nome}>{c.nome}</option>
+            ))}
+          </select>
+        </div>
+        {(filtroCodigo || filtroCategoria) && (
+          <button
+            type="button"
+            onClick={() => { setFiltroCodigo(''); setFiltroCategoria(''); }}
+            style={{ padding: '10px 16px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       {/* Tabela */}
       <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -209,14 +250,14 @@ export default function ProdutosPage() {
             </tr>
           </thead>
           <tbody>
-            {produtos.length === 0 ? (
+            {produtosFiltrados.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
-                  Nenhum produto cadastrado
+                  {produtos.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
                 </td>
               </tr>
             ) : (
-              produtos.map((produto) => (
+              produtosFiltrados.map((produto) => (
                 <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {produto.imagem_url ? (
