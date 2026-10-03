@@ -191,12 +191,25 @@ export default function ProdutosPage() {
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Foto</label>
                 <input
-                  type="text"
-                  value={formData.foto}
-                  onChange={e => setFormData({ ...formData, foto: e.target.value })}
-                  placeholder="URL da foto"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, foto: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
+                {formData.foto && formData.foto.startsWith('data:') && (
+                  <div style={{ marginTop: '8px' }}>
+                    <img src={formData.foto} alt="Preview" style={{ maxWidth: '100px', maxHeight: '100px', borderRadius: '4px' }} />
+                  </div>
+                )}
               </div>
 
               <div>
