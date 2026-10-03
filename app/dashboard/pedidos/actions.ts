@@ -193,9 +193,11 @@ export async function atualizarItemPedido(
   itemId: string,
   pedidoId: string,
   quantidade: number,
-  precoUnitario: number
+  precoUnitario: number,
+  banho: string
 ) {
   const supabase = await createClient();
+  if (!banho) return { success: false, error: 'Selecione o banho' };
   const subtotal = quantidade * precoUnitario;
 
   const { data: itemAtual } = await supabase
@@ -206,7 +208,7 @@ export async function atualizarItemPedido(
 
   const { error } = await supabase
     .from('itens_pedido')
-    .update({ quantidade, preco_unitario: precoUnitario, subtotal })
+    .update({ quantidade, preco_unitario: precoUnitario, subtotal, banho })
     .eq('id', itemId);
 
   if (error) return { success: false, error: error.message };

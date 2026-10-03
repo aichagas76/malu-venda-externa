@@ -53,6 +53,7 @@ export default function PedidosPage() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editItemQtd, setEditItemQtd] = useState(1);
   const [editItemPreco, setEditItemPreco] = useState(0);
+  const [editItemBanho, setEditItemBanho] = useState('');
 
   const [clienteId, setClienteId] = useState('');
   const [tipo, setTipo] = useState('');
@@ -162,16 +163,18 @@ export default function PedidosPage() {
     setEditingItemId(item.id);
     setEditItemQtd(item.quantidade);
     setEditItemPreco(item.preco_unitario);
+    setEditItemBanho(item.banho || '');
   }
 
   async function handleSalvarItem(pedidoId: string) {
     if (!editingItemId) return;
-    const result = await atualizarItemPedido(editingItemId, pedidoId, editItemQtd, editItemPreco);
+    if (!editItemBanho) { alert('Selecione o banho'); return; }
+    const result = await atualizarItemPedido(editingItemId, pedidoId, editItemQtd, editItemPreco, editItemBanho);
     if (result.success) {
       setItensPedido(prev => ({
         ...prev,
         [pedidoId]: prev[pedidoId].map(it =>
-          it.id === editingItemId ? { ...it, quantidade: editItemQtd, preco_unitario: editItemPreco } : it
+          it.id === editingItemId ? { ...it, quantidade: editItemQtd, preco_unitario: editItemPreco, banho: editItemBanho } : it
         ),
       }));
       setPedidos(prev => prev.map(p => {
@@ -184,6 +187,8 @@ export default function PedidosPage() {
         return { ...p, valor_total: total };
       }));
       setEditingItemId(null);
+    } else {
+      alert(result.error || 'Erro ao salvar item');
     }
   }
 
@@ -467,7 +472,15 @@ export default function PedidosPage() {
                                 <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: editing ? '#fefce8' : 'transparent' }}>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>{item.produtos?.categoria || '—'}</td>
                                   <td style={{ padding: '4px 8px', fontWeight: '600', color: '#6366f1' }}>{item.produtos?.sku || '—'}</td>
-                                  <td style={{ padding: '4px 8px', color: '#374151' }}>{item.banho || '—'}</td>
+                                  <td style={{ padding: '4px 8px', color: '#374151' }}>
+                                    {editing ? (
+                                      <select value={editItemBanho} onChange={e => setEditItemBanho(e.target.value)}
+                                        style={{ padding: '2px 4px', border: '1px solid #d97706', borderRadius: '4px', fontSize: '12px', backgroundColor: 'white', color: '#111827' }}>
+                                        <option value="">Selecione</option>
+                                        {BANHOS.map(b => <option key={b} value={b}>{b}</option>)}
+                                      </select>
+                                    ) : (item.banho || '—')}
+                                  </td>
                                   <td style={{ padding: '4px 8px', textAlign: 'center', color: '#374151' }}>
                                     {editing ? (
                                       <input type="number" value={editItemQtd} min="1"
