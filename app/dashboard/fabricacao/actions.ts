@@ -65,7 +65,7 @@ export async function avancarEtapa(itemId: string) {
 
   const { data: item } = await supabase
     .from('itens_pedido')
-    .select('etapa_fabricacao')
+    .select('etapa_fabricacao, pedido_id')
     .eq('id', itemId)
     .single();
 
@@ -74,9 +74,30 @@ export async function avancarEtapa(itemId: string) {
 
   const idx = ETAPAS.indexOf(etapaAtual);
   if (idx === ETAPAS.length - 1) {
-    await supabase.from('itens_pedido').update({ etapa_fabricacao: null }).eq('id', itemId);
+    const { error: errConcluir } = await supabase.from('itens_pedido').update({ etapa_fabricacao: null }).eq('id', itemId);
+    if (errConcluir) return { success: false, error: errConcluir.message };
+
+    let pedidoFechado = false;
+    if (item?.pedido_id) {
+      const { count } = await supabase
+        .from('itens_pedido')
+        .select('id', { count: 'exact', head: true })
+        .eq('pedido_id', item.pedido_id)
+        .not('etapa_fabricacao', 'is', null);
+
+      if (count === 0) {
+        const { error: errFechar } = await supabase
+          .from('pedidos')
+          .update({ status: 'fechado', atualizado_em: new Date().toISOString() })
+          .eq('id', item.pedido_id)
+          .eq('status', 'em_fabricacao');
+        pedidoFechado = !errFechar;
+      }
+    }
+
     revalidatePath('/dashboard/fabricacao');
-    return { success: true, concluido: true };
+    revalidatePath('/dashboard/pedidos');
+    return { success: true, concluido: true, pedidoFechado };
   }
 
   const proxima = ETAPAS[idx + 1];
