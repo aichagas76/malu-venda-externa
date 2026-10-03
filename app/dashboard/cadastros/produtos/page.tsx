@@ -8,6 +8,8 @@ interface Produto {
   nome: string;
   sku?: string;
   categoria?: string;
+  peso?: number;
+  foto?: string;
   data_cadastro?: string;
 }
 
@@ -15,9 +17,11 @@ interface FormData {
   nome: string;
   sku: string;
   categoria: string;
+  peso: string;
+  foto: string;
 }
 
-const FORM_INICIAL: FormData = { nome: '', sku: '', categoria: '' };
+const FORM_INICIAL: FormData = { nome: '', sku: '', categoria: '', peso: '', foto: '' };
 
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -47,6 +51,8 @@ export default function ProdutosPage() {
       nome: produto.nome,
       sku: produto.sku || '',
       categoria: produto.categoria || '',
+      peso: produto.peso ? produto.peso.toString() : '',
+      foto: produto.foto || '',
     });
     setShowModal(true);
   };
@@ -54,8 +60,8 @@ export default function ProdutosPage() {
   const handleSalvar = async () => {
     setEnviando(true);
     const result = editando
-      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria)
-      : await criarProduto(formData.nome, formData.sku, formData.categoria);
+      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto)
+      : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto);
 
     if (result.success) {
       await carregarProdutos();
@@ -100,9 +106,11 @@ export default function ProdutosPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>SKU</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Foto</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Categoria</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Código (SKU)</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Peso</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Data de Cadastro</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Ações</th>
             </tr>
@@ -110,16 +118,24 @@ export default function ProdutosPage() {
           <tbody>
             {produtos.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
                   Nenhum produto cadastrado
                 </td>
               </tr>
             ) : (
               produtos.map((produto) => (
                 <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{produto.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.sku || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
+                    {produto.foto ? (
+                      <img src={produto.foto} alt={produto.nome} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.categoria || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.sku || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{produto.nome}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.peso ? `${produto.peso} g` : '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {produto.data_cadastro ? new Date(produto.data_cadastro).toLocaleDateString('pt-BR') : '—'}
                   </td>
@@ -173,23 +189,12 @@ export default function ProdutosPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Nome *</label>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Foto</label>
                 <input
                   type="text"
-                  value={formData.nome}
-                  onChange={e => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Nome do produto"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>SKU</label>
-                <input
-                  type="text"
-                  value={formData.sku}
-                  onChange={e => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="SKU do produto"
+                  value={formData.foto}
+                  onChange={e => setFormData({ ...formData, foto: e.target.value })}
+                  placeholder="URL da foto"
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
@@ -201,6 +206,39 @@ export default function ProdutosPage() {
                   value={formData.categoria}
                   onChange={e => setFormData({ ...formData, categoria: e.target.value })}
                   placeholder="Categoria do produto"
+                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Código (SKU)</label>
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={e => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="Código/SKU do produto"
+                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Nome *</label>
+                <input
+                  type="text"
+                  value={formData.nome}
+                  onChange={e => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Nome do produto"
+                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Peso (g)</label>
+                <input
+                  type="number"
+                  value={formData.peso}
+                  onChange={e => setFormData({ ...formData, peso: e.target.value })}
+                  placeholder="Peso em gramas"
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>

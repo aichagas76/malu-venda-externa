@@ -17,7 +17,7 @@ export async function listarProdutos() {
   return { success: true, data: data || [] };
 }
 
-export async function criarProduto(nome: string, sku: string, categoria: string) {
+export async function criarProduto(nome: string, sku: string, categoria: string, peso: string, foto: string) {
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
@@ -29,6 +29,8 @@ export async function criarProduto(nome: string, sku: string, categoria: string)
       nome: nome.trim(),
       sku: sku.trim() || null,
       categoria: categoria.trim() || null,
+      peso: peso ? parseFloat(peso) : null,
+      foto: foto.trim() || null,
       data_cadastro: new Date().toISOString(),
     }])
     .select()
@@ -39,7 +41,7 @@ export async function criarProduto(nome: string, sku: string, categoria: string)
   return { success: true, data };
 }
 
-export async function atualizarProduto(produtoId: string, nome: string, sku: string, categoria: string) {
+export async function atualizarProduto(produtoId: string, nome: string, sku: string, categoria: string, peso: string, foto: string) {
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
@@ -50,6 +52,8 @@ export async function atualizarProduto(produtoId: string, nome: string, sku: str
       nome: nome.trim(),
       sku: sku.trim() || null,
       categoria: categoria.trim() || null,
+      peso: peso ? parseFloat(peso) : null,
+      foto: foto.trim() || null,
     })
     .eq('id', produtoId)
     .eq('empresa_id', EMPRESA_ID);
