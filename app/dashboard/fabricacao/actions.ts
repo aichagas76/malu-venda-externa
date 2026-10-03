@@ -35,6 +35,9 @@ export async function listarItensFabricacao() {
       soldador_nome,
       soldador_data_saida,
       soldador_data_retorno,
+      encartelador_nome,
+      encartelador_data_saida,
+      encartelador_data_retorno,
       pedido_id,
       produto_id,
       produto:produto_id (id, nome, sku, categoria, imagem_url),
@@ -136,6 +139,21 @@ export async function salvarSoldador(itemId: string, soldadorNome: string, solda
       soldador_nome: soldadorNome || null,
       soldador_data_saida: soldadorDataSaida || null,
       soldador_data_retorno: soldadorDataRetorno || null,
+    })
+    .eq('id', itemId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/dashboard/fabricacao');
+  return { success: true };
+}
+
+export async function salvarEncartelador(itemId: string, encarteladorNome: string, encarteladorDataSaida: string, encarteladorDataRetorno?: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('itens_pedido')
+    .update({
+      encartelador_nome: encarteladorNome || null,
+      encartelador_data_saida: encarteladorDataSaida || null,
+      encartelador_data_retorno: encarteladorDataRetorno || null,
     })
     .eq('id', itemId);
   if (error) return { success: false, error: error.message };

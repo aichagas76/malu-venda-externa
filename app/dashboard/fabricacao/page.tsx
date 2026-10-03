@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { listarItensFabricacao, avancarEtapa, voltarEtapa, salvarObservacao, salvarPrestador, salvarSoldador } from './actions';
+import { listarItensFabricacao, avancarEtapa, voltarEtapa, salvarObservacao, salvarPrestador, salvarSoldador, salvarEncartelador } from './actions';
 import { listarPrestadores } from '../cadastros/prestadores/actions';
 import { listarSoldadores } from '../cadastros/soldadores/actions';
+import { listarEncarteladores } from '../cadastros/encarteladores/actions';
 
 const ETAPAS = [
   { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
@@ -32,6 +33,9 @@ interface ItemFabricacao {
   soldador_nome?: string;
   soldador_data_saida?: string;
   soldador_data_retorno?: string;
+  encartelador_nome?: string;
+  encartelador_data_saida?: string;
+  encartelador_data_retorno?: string;
   produto?: { id: string; nome: string; sku: string; categoria: string; imagem_url?: string };
   pedido?: { id: string; numero_pedido: string; cliente?: { nome: string } };
 }
@@ -91,6 +95,21 @@ const IconSoldador = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+const IconEncartelador = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="7" cy="5" r="2.6" />
+    <path d="M7 8.2v7" />
+    <path d="M7 15.2l-3 6" />
+    <path d="M7 15.2l3 6" />
+    <path d="M7 10.5l5.5-1" />
+    <rect x="12.5" y="4.5" width="9" height="11" rx="1.2" />
+    <circle cx="15.5" cy="8" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="18.7" cy="8" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="15.5" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="18.7" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 const IconBack = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="15 18 9 12 15 6"/>
@@ -123,9 +142,11 @@ export default function FabricacaoPage() {
   const [obsText, setObsText] = useState('');
   const [prestadorPopup, setPrestadorPopup] = useState<{ itemId: string; nome: string; dataSaida: string; dataRetorno: string; modo: 'saida' | 'retorno' } | null>(null);
   const [soldadorPopup, setSoldadorPopup] = useState<{ itemId: string; nome: string; dataSaida: string; dataRetorno: string; modo: 'saida' | 'retorno' } | null>(null);
+  const [encarteladorPopup, setEncarteladorPopup] = useState<{ itemId: string; nome: string; dataSaida: string; dataRetorno: string; modo: 'saida' | 'retorno' } | null>(null);
 
   const [prestadoresCadastro, setPrestadoresCadastro] = useState<{ id: string; nome: string }[]>([]);
   const [soldadoresCadastro, setSoldadoresCadastro] = useState<{ id: string; nome: string }[]>([]);
+  const [encarteladoresCadastro, setEncarteladoresCadastro] = useState<{ id: string; nome: string }[]>([]);
 
   const carregarItens = useCallback(async () => {
     const result = await listarItensFabricacao();
@@ -138,6 +159,7 @@ export default function FabricacaoPage() {
   useEffect(() => {
     listarPrestadores().then(r => { if (r.success) setPrestadoresCadastro(r.data as { id: string; nome: string }[]); });
     listarSoldadores().then(r => { if (r.success) setSoldadoresCadastro(r.data as { id: string; nome: string }[]); });
+    listarEncarteladores().then(r => { if (r.success) setEncarteladoresCadastro(r.data as { id: string; nome: string }[]); });
   }, []);
 
   async function handleAvancar(itemId: string) {
@@ -230,6 +252,39 @@ export default function FabricacaoPage() {
         : it
     ));
     setSoldadorPopup(null);
+  }
+
+  function handleOpenEncartelador(item: ItemFabricacao, modo: 'saida' | 'retorno') {
+    const hoje = new Date().toISOString().split('T')[0];
+    setEncarteladorPopup({
+      itemId: item.id,
+      nome: item.encartelador_nome || '',
+      dataSaida: item.encartelador_data_saida || hoje,
+      dataRetorno: item.encartelador_data_retorno || '',
+      modo,
+    });
+  }
+
+  async function handleSalvarEncartelador() {
+    if (!encarteladorPopup) return;
+    if (encarteladorPopup.modo === 'saida' && !encarteladorPopup.nome) { alert('Selecione um encartelador'); return; }
+    await salvarEncartelador(
+      encarteladorPopup.itemId,
+      encarteladorPopup.nome,
+      encarteladorPopup.dataSaida,
+      encarteladorPopup.dataRetorno
+    );
+    setItens(prev => prev.map(it =>
+      it.id === encarteladorPopup.itemId
+        ? {
+            ...it,
+            encartelador_nome: encarteladorPopup.nome || undefined,
+            encartelador_data_saida: encarteladorPopup.dataSaida || undefined,
+            encartelador_data_retorno: encarteladorPopup.dataRetorno || undefined,
+          }
+        : it
+    ));
+    setEncarteladorPopup(null);
   }
 
   async function handleVoltar(itemId: string, etapaAtual: string) {
@@ -395,6 +450,94 @@ export default function FabricacaoPage() {
                 Cancelar
               </button>
               <button onClick={handleSalvarSoldador}
+                style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: '#d97706', color: 'white' }}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Encartelador */}
+      {encarteladorPopup && (
+        <div onClick={() => setEncarteladorPopup(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                {encarteladorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconEncartelador size={18} /> Enviar para Encartelar</span> : '📥 Retorno do Encartelamento'}
+              </h3>
+              <button onClick={() => setEncarteladorPopup(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            {encarteladorPopup.modo === 'saida' && (
+              <>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Nome do Encartelador *</label>
+                  <select
+                    value={encarteladorPopup.nome}
+                    onChange={e => setEncarteladorPopup({ ...encarteladorPopup, nome: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                  >
+                    <option value="">Selecione um encartelador</option>
+                    {encarteladorPopup.nome && !encarteladoresCadastro.some(x => x.nome === encarteladorPopup.nome) && (
+                      <option value={encarteladorPopup.nome}>{encarteladorPopup.nome}</option>
+                    )}
+                    {encarteladoresCadastro.map(x => (
+                      <option key={x.id} value={x.nome}>{x.nome}</option>
+                    ))}
+                  </select>
+                  {encarteladoresCadastro.length === 0 && (
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '6px 0 0' }}>
+                      Nenhum encartelador cadastrado. Cadastre em Cadastros &gt; Encarteladores.
+                    </p>
+                  )}
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Data de Saída</label>
+                  <input
+                    type="date"
+                    value={encarteladorPopup.dataSaida}
+                    onChange={e => setEncarteladorPopup({ ...encarteladorPopup, dataSaida: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </>
+            )}
+
+            {encarteladorPopup.modo === 'retorno' && (
+              <>
+                <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
+                  <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 4px 0' }}>Encartelador</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{encarteladorPopup.nome}</p>
+                  <p style={{ fontSize: '10px', color: '#94a3b8', margin: '4px 0 0 0' }}>Saiu em {new Date(encarteladorPopup.dataSaida).toLocaleDateString('pt-BR')}</p>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Data de Retorno</label>
+                  <input
+                    type="date"
+                    value={encarteladorPopup.dataRetorno}
+                    onChange={e => setEncarteladorPopup({ ...encarteladorPopup, dataRetorno: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEncarteladorPopup(null)}
+                style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
+                Cancelar
+              </button>
+              <button onClick={handleSalvarEncartelador}
                 style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: '#d97706', color: 'white' }}>
                 OK
               </button>
@@ -758,6 +901,60 @@ export default function FabricacaoPage() {
                                 </button>
                               )}
 
+                              {/* Ícone Encartelador (só em ENCARTELAMENTO) */}
+                              {etapa.key === 'encartelamento' && (
+                                <button
+                                  onClick={() => {
+                                    if (!item.encartelador_nome) {
+                                      handleOpenEncartelador(item, 'saida');
+                                    } else if (item.encartelador_nome && !item.encartelador_data_retorno) {
+                                      const hoje = new Date().toISOString().split('T')[0];
+                                      setEncarteladorPopup({
+                                        itemId: item.id,
+                                        nome: item.encartelador_nome,
+                                        dataSaida: item.encartelador_data_saida || hoje,
+                                        dataRetorno: hoje,
+                                        modo: 'retorno',
+                                      });
+                                    }
+                                  }}
+                                  disabled={item.encartelador_data_retorno ? true : false}
+                                  title={
+                                    !item.encartelador_nome ? 'Enviar para encartelar' :
+                                    !item.encartelador_data_retorno ? `No encartelamento com ${item.encartelador_nome} - clique para retorno com hoje` :
+                                    `Retornou em ${new Date(item.encartelador_data_retorno).toLocaleDateString('pt-BR')}`
+                                  }
+                                  style={{
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '22px',
+                                    height: '22px',
+                                    borderRadius: '4px',
+                                    border: `1px solid ${
+                                      item.encartelador_data_retorno ? '#10b981' :
+                                      item.encartelador_nome ? '#d97706' :
+                                      etapa.cor
+                                    }`,
+                                    backgroundColor:
+                                      item.encartelador_data_retorno ? '#d1fae5' :
+                                      item.encartelador_nome ? '#fbbf24' :
+                                      'white',
+                                    color:
+                                      item.encartelador_data_retorno ? '#059669' :
+                                      item.encartelador_nome ? '#78350f' :
+                                      etapa.cor,
+                                    cursor: item.encartelador_data_retorno ? 'default' : 'pointer',
+                                    padding: 0,
+                                    fontSize: '9px',
+                                    fontWeight: '700',
+                                    opacity: item.encartelador_data_retorno ? 0.6 : 1,
+                                  }}>
+                                  {item.encartelador_data_retorno ? '✓' : <IconEncartelador size={16} />}
+                                </button>
+                              )}
+
                               {/* Botão avançar */}
                               <button onClick={() => handleAvancar(item.id)} disabled={busy} title={isLast ? 'Concluir' : 'Avançar etapa'}
                                 style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '18px', borderRadius: '3px', border: 'none', backgroundColor: busy ? '#94a3b8' : etapa.cor, color: 'white', cursor: busy ? 'not-allowed' : 'pointer', padding: 0 }}>
@@ -835,6 +1032,27 @@ export default function FabricacaoPage() {
                                     <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><IconSoldador size={11} /> Na solda</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       {item.soldador_nome} ({new Date(item.soldador_data_saida!).toLocaleDateString('pt-BR')})
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Linha de Encartelador (só em ENCARTELAMENTO e se preenchido) */}
+                            {etapa.key === 'encartelamento' && item.encartelador_nome && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '1px 4px 3px', borderTop: '1px solid #f1f5f9' }}>
+                                {item.encartelador_data_retorno ? (
+                                  <>
+                                    <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600' }}>✓ Retornou</span>
+                                    <span style={{ fontSize: '8px', color: '#94a3b8' }}>
+                                      ({new Date(item.encartelador_data_retorno).toLocaleDateString('pt-BR')})
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><IconEncartelador size={11} /> Encartelando</span>
+                                    <span style={{ fontSize: '8px', color: '#94a3b8' }}>
+                                      {item.encartelador_nome} ({new Date(item.encartelador_data_saida!).toLocaleDateString('pt-BR')})
                                     </span>
                                   </>
                                 )}
