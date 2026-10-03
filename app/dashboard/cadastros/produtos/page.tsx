@@ -42,6 +42,8 @@ export default function ProdutosPage() {
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [itensCatalogo, setItensCatalogo] = useState<{ id: string; nome: string; unidade: string; valor_unitario: number }[]>([]);
   const [itensProduto, setItensProduto] = useState<{ item_id: string; quantidade: string }[]>([]);
+  const [produtoItens, setProdutoItens] = useState<Produto | null>(null);
+  const [enviandoItens, setEnviandoItens] = useState(false);
   const [novoItemId, setNovoItemId] = useState('');
   const [novaQtd, setNovaQtd] = useState('');
 
@@ -64,22 +66,35 @@ export default function ProdutosPage() {
     setNovaQtd('');
   };
 
-  const abrirNovoProduto = () => {
-    setEditando(null);
-    setFormData(FORM_INICIAL);
+  const abrirItens = (produto: Produto) => {
     setItensProduto([]);
     setNovoItemId('');
     setNovaQtd('');
-    setShowModal(true);
-  };
-
-  const abrirEdicao = async (produto: Produto) => {
-    setItensProduto([]);
-    setNovoItemId('');
-    setNovaQtd('');
+    setProdutoItens(produto);
     listarItensProduto(produto.id).then(res => {
       if (res.success) setItensProduto((res.data as { item_id: string; quantidade: number }[]).map(r => ({ item_id: r.item_id, quantidade: String(r.quantidade) })));
     });
+  };
+
+  const salvarItens = async () => {
+    if (!produtoItens) return;
+    setEnviandoItens(true);
+    const res = await salvarItensProduto(
+      produtoItens.id,
+      itensProduto.map(p => ({ item_id: p.item_id, quantidade: parseFloat(p.quantidade) }))
+    );
+    if (res.success) setProdutoItens(null);
+    else alert(res.error || 'Erro ao salvar itens');
+    setEnviandoItens(false);
+  };
+
+  const abrirNovoProduto = () => {
+    setEditando(null);
+    setFormData(FORM_INICIAL);
+    setShowModal(true);
+  };
+
+  const abrirEdicao = (produto: Produto) => {
     setEditando(produto);
     setFormData({
       nome: produto.nome || '',
@@ -134,19 +149,6 @@ export default function ProdutosPage() {
       : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto);
 
     if (result.success) {
-      const produtoId = editando ? editando.id : (result as { data?: { id: string } }).data?.id;
-      if (produtoId) {
-        const resItens = await salvarItensProduto(
-          produtoId,
-          itensProduto.map(p => ({ item_id: p.item_id, quantidade: parseFloat(p.quantidade) }))
-        );
-        if (!resItens.success) {
-          alert(`Produto salvo, mas os itens não: ${resItens.error}`);
-          await carregarProdutos();
-          setEnviando(false);
-          return;
-        }
-      }
       await carregarProdutos();
       setShowModal(false);
     } else {
@@ -225,6 +227,13 @@ export default function ProdutosPage() {
                     {produto.criado_em ? new Date(produto.criado_em).toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => abrirItens(produto)}
+                      title="Itens do produto"
+                      aria-label="Itens do produto"
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', cursor: 'pointer' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                    </button>
                     <button
                       onClick={() => abrirEdicao(produto)}
                       title="Editar"
@@ -367,58 +376,6 @@ export default function ProdutosPage() {
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
-
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Itens do produto</label>
-
-                {itensProduto.length > 0 && (
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '10px', overflow: 'hidden' }}>
-                    {itensProduto.map((ip) => {
-                      const item = itensCatalogo.find(i => i.id === ip.item_id);
-                      const subtotal = item ? Number(item.valor_unitario) * (parseFloat(ip.quantidade) || 0) : 0;
-                      return (
-                        <div key={ip.item_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ color: '#1e293b', fontWeight: '500' }}>{item?.nome || 'Item removido'}</div>
-                            <div style={{ color: '#94a3b8', fontSize: '11px' }}>
-                              {item ? `${UNIDADES_ITEM[item.unidade] || item.unidade} · ${Number(item.valor_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 4 })}` : ''}
-                              {item ? ` · Subtotal ${subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}
-                            </div>
-                          </div>
-                          <input
-                            type="number" min="0" step="any" value={ip.quantidade}
-                            onChange={e => setItensProduto(prev => prev.map(p => p.item_id === ip.item_id ? { ...p, quantidade: e.target.value } : p))}
-                            aria-label="Quantidade"
-                            style={{ width: '80px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                          />
-                          <button type="button" title="Remover item" aria-label="Remover item"
-                            onClick={() => setItensProduto(prev => prev.filter(p => p.item_id !== ip.item_id))}
-                            style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
-                            ×
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select value={novoItemId} onChange={e => setNovoItemId(e.target.value)}
-                    style={{ flex: 1, minWidth: 0, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' }}>
-                    <option value="">Selecione um item</option>
-                    {itensCatalogo.filter(i => !itensProduto.some(p => p.item_id === i.id)).map(i => (
-                      <option key={i.id} value={i.id}>{i.nome}</option>
-                    ))}
-                  </select>
-                  <input type="number" min="0" step="any" value={novaQtd} onChange={e => setNovaQtd(e.target.value)}
-                    placeholder="Qtd" aria-label="Quantidade"
-                    style={{ width: '80px', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
-                  <button type="button" onClick={adicionarItem}
-                    style={{ padding: '10px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
-                    Adicionar
-                  </button>
-                </div>
-              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -451,6 +408,80 @@ export default function ProdutosPage() {
                   opacity: enviando ? 0.6 : 1
                 }}>
                 {enviando ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {produtoItens && (
+        <div onClick={() => setProdutoItens(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '520px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>Itens do produto</h2>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>
+              {produtoItens.sku}{produtoItens.nome ? ` · ${produtoItens.nome}` : ''}
+            </p>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <select value={novoItemId} onChange={e => setNovoItemId(e.target.value)} aria-label="Item"
+                style={{ flex: 1, minWidth: 0, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' }}>
+                <option value="">Selecione um item</option>
+                {itensCatalogo.filter(i => !itensProduto.some(p => p.item_id === i.id)).map(i => (
+                  <option key={i.id} value={i.id}>{i.nome}</option>
+                ))}
+              </select>
+              <input type="number" min="0" step="any" value={novaQtd} onChange={e => setNovaQtd(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') adicionarItem(); }}
+                placeholder="Qtd" aria-label="Quantidade"
+                style={{ width: '80px', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+              <button type="button" onClick={adicionarItem}
+                style={{ padding: '10px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                Adicionar
+              </button>
+            </div>
+
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '16px', overflow: 'hidden' }}>
+              {itensProduto.length === 0 ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Nenhum item adicionado</div>
+              ) : (
+                itensProduto.map((ip) => {
+                  const item = itensCatalogo.find(i => i.id === ip.item_id);
+                  const subtotal = item ? Number(item.valor_unitario) * (parseFloat(ip.quantidade) || 0) : 0;
+                  return (
+                    <div key={ip.item_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: '#1e293b', fontWeight: '500' }}>{item?.nome || 'Item removido'}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '11px' }}>
+                          {item ? `${UNIDADES_ITEM[item.unidade] || item.unidade} · ${Number(item.valor_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 4 })} · Subtotal ${subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}
+                        </div>
+                      </div>
+                      <input
+                        type="number" min="0" step="any" value={ip.quantidade}
+                        onChange={e => setItensProduto(prev => prev.map(p => p.item_id === ip.item_id ? { ...p, quantidade: e.target.value } : p))}
+                        aria-label="Quantidade do item"
+                        style={{ width: '80px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
+                      />
+                      <button type="button" title="Remover item" aria-label="Remover item"
+                        onClick={() => setItensProduto(prev => prev.filter(p => p.item_id !== ip.item_id))}
+                        style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
+                        ×
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setProdutoItens(null)}
+                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                Cancelar
+              </button>
+              <button onClick={salvarItens} disabled={enviandoItens}
+                style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: enviandoItens ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviandoItens ? 0.6 : 1 }}>
+                {enviandoItens ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>
