@@ -15,7 +15,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('tema')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}" }} />
+      </head>
       <body style={{ minHeight: '100vh', backgroundColor: '#f8fafc', overflowX: 'hidden' }}>
         {children}
       </body>
