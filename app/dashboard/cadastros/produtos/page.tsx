@@ -6,7 +6,7 @@ import { listarProdutos,criarProduto, atualizarProduto, deletarProduto } from '.
 
 interface Produto {
   id: string;
-  nome: string;
+  nome: string | null;
   sku?: string;
   categoria?: string;
   peso?: number;
@@ -56,7 +56,7 @@ export default function ProdutosPage() {
   const abrirEdicao = (produto: Produto) => {
     setEditando(produto);
     setFormData({
-      nome: produto.nome,
+      nome: produto.nome || '',
       sku: produto.sku || '',
       categoria: produto.categoria || '',
       peso: produto.peso ? produto.peso.toString() : '',
@@ -173,7 +173,7 @@ export default function ProdutosPage() {
                 <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {produto.imagem_url ? (
-                      <img src={produto.imagem_url} alt={produto.nome} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
+                      <img src={produto.imagem_url} alt={produto.nome || 'Foto do produto'} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
                     ) : (
                       '—'
                     )}
@@ -308,7 +308,7 @@ export default function ProdutosPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Nome *</label>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Nome</label>
                 <input
                   type="text"
                   value={formData.nome}
