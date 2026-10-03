@@ -17,7 +17,7 @@ export async function listarClientes() {
   return { success: true, data: data || [] };
 }
 
-export async function criarCliente(nome: string, email: string, telefone: string, endereco: string) {
+export async function criarCliente(nome: string, telefone: string) {
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
@@ -27,9 +27,7 @@ export async function criarCliente(nome: string, email: string, telefone: string
     .insert([{
       empresa_id: EMPRESA_ID,
       nome: nome.trim(),
-      email: email.trim() || null,
       telefone: telefone.trim() || null,
-      endereco: endereco.trim() || null,
       data_cadastro: new Date().toISOString(),
     }])
     .select()
@@ -40,7 +38,7 @@ export async function criarCliente(nome: string, email: string, telefone: string
   return { success: true, data };
 }
 
-export async function atualizarCliente(clienteId: string, nome: string, email: string, telefone: string, endereco: string) {
+export async function atualizarCliente(clienteId: string, nome: string, telefone: string) {
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
@@ -49,9 +47,7 @@ export async function atualizarCliente(clienteId: string, nome: string, email: s
     .from('clientes')
     .update({
       nome: nome.trim(),
-      email: email.trim() || null,
       telefone: telefone.trim() || null,
-      endereco: endereco.trim() || null,
     })
     .eq('id', clienteId)
     .eq('empresa_id', EMPRESA_ID);

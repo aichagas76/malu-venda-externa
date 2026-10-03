@@ -6,20 +6,16 @@ import { listarClientes, criarCliente, atualizarCliente, deletarCliente } from '
 interface Cliente {
   id: string;
   nome: string;
-  email?: string;
   telefone?: string;
-  endereco?: string;
   data_cadastro?: string;
 }
 
 interface FormData {
   nome: string;
-  email: string;
   telefone: string;
-  endereco: string;
 }
 
-const FORM_INICIAL: FormData = { nome: '', email: '', telefone: '', endereco: '' };
+const FORM_INICIAL: FormData = { nome: '', telefone: '' };
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -47,9 +43,7 @@ export default function ClientesPage() {
     setEditando(cliente);
     setFormData({
       nome: cliente.nome,
-      email: cliente.email || '',
       telefone: cliente.telefone || '',
-      endereco: cliente.endereco || '',
     });
     setShowModal(true);
   };
@@ -57,8 +51,8 @@ export default function ClientesPage() {
   const handleSalvar = async () => {
     setEnviando(true);
     const result = editando
-      ? await atualizarCliente(editando.id, formData.nome, formData.email, formData.telefone, formData.endereco)
-      : await criarCliente(formData.nome, formData.email, formData.telefone, formData.endereco);
+      ? await atualizarCliente(editando.id, formData.nome, formData.telefone)
+      : await criarCliente(formData.nome, formData.telefone);
 
     if (result.success) {
       await carregarClientes();
@@ -104,9 +98,7 @@ export default function ClientesPage() {
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Email</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Telefone</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Endereço</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Data de Cadastro</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Ações</th>
             </tr>
@@ -114,7 +106,7 @@ export default function ClientesPage() {
           <tbody>
             {clientes.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
                   Nenhum cliente cadastrado
                 </td>
               </tr>
@@ -122,11 +114,7 @@ export default function ClientesPage() {
               clientes.map((cliente) => (
                 <tr key={cliente.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{cliente.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{cliente.email || '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{cliente.telefone || '—'}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {cliente.endereco || '—'}
-                  </td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {cliente.data_cadastro ? new Date(cliente.data_cadastro).toLocaleDateString('pt-BR') : '—'}
                   </td>
@@ -191,34 +179,12 @@ export default function ClientesPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Telefone</label>
                 <input
                   type="tel"
                   value={formData.telefone}
                   onChange={e => setFormData({ ...formData, telefone: e.target.value })}
                   placeholder="(00) 00000-0000"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Endereço</label>
-                <input
-                  type="text"
-                  value={formData.endereco}
-                  onChange={e => setFormData({ ...formData, endereco: e.target.value })}
-                  placeholder="Rua, número, bairro..."
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
