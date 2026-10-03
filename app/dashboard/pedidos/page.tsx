@@ -85,12 +85,6 @@ export default function PedidosPage() {
     setLoading(false);
   }
 
-  async function handleNovaOrder() {
-    setError('');
-    setClienteId('');
-    setEditingPedidoId(null);
-  }
-
   async function handleCriarPedido() {
     if (!clienteId) { setError('Selecione um cliente'); return; }
     setSaving(true);
@@ -305,18 +299,6 @@ export default function PedidosPage() {
           >
             Lista de compras
           </button>
-        <button
-          onClick={handleNovaOrder}
-          onMouseEnter={() => setHoveredBtn('novo')}
-          onMouseLeave={() => setHoveredBtn(null)}
-          style={{
-            background: hoveredBtn === 'novo' ? 'var(--acao-hover)' : 'var(--acao)',
-            color: 'white', border: 'none', padding: '7px 16px', borderRadius: 'var(--raio-sm)',
-            fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-          }}
-        >
-          + Novo Pedido
-        </button>
         </div>
       </div>
 
