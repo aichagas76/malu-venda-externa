@@ -19,17 +19,17 @@ const BANHO_COLORS: Record<string, { bg: string; color: string }> = {
 
 function BanhoIcon({ banho }: { banho: string }) {
   if (banho === 'Ouro') return (
-    <svg width="10" height="10" viewBox="0 0 10 10" title="Ouro">
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-label="Ouro">
       <circle cx="5" cy="5" r="4.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8"/>
     </svg>
   );
   if (banho === 'Prata') return (
-    <svg width="10" height="10" viewBox="0 0 10 10" title="Prata">
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-label="Prata">
       <circle cx="5" cy="5" r="4.5" fill="#94a3b8" stroke="#64748b" strokeWidth="0.8"/>
     </svg>
   );
   if (banho === 'Diamante') return (
-    <svg width="10" height="10" viewBox="0 0 12 12" title="Diamante">
+    <svg width="10" height="10" viewBox="0 0 12 12" aria-label="Diamante">
       <polygon points="6,1 11,5 6,11 1,5" fill="#38bdf8" stroke="#0284c7" strokeWidth="0.8"/>
     </svg>
   );

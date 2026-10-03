@@ -122,7 +122,7 @@ export default function PedidosPage() {
   async function carregarItensPedido(pedidoId: string) {
     const result = await listarItensPedido(pedidoId);
     if (result.success) {
-      setItensPedido({ ...itensPedido, [pedidoId]: result.data });
+      setItensPedido({ ...itensPedido, [pedidoId]: result.data as ItemPedido[] });
     }
   }
 
