@@ -112,3 +112,20 @@ export async function salvarItensProduto(produtoId: string, itens: { item_id: st
   revalidatePath('/dashboard/cadastros/produtos');
   return { success: true };
 }
+
+export async function listarValoresProdutos() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('produto_itens')
+    .select('produto_id, quantidade, itens(valor_unitario)')
+    .eq('empresa_id', EMPRESA_ID);
+
+  if (error) return { success: false, error: error.message, data: {} as Record<string, number> };
+
+  const valores: Record<string, number> = {};
+  for (const row of (data || []) as unknown as { produto_id: string; quantidade: number; itens: { valor_unitario: number } | { valor_unitario: number }[] | null }[]) {
+    const item = Array.isArray(row.itens) ? row.itens[0] : row.itens;
+    valores[row.produto_id] = (valores[row.produto_id] || 0) + Number(row.quantidade) * Number(item?.valor_unitario || 0);
+  }
+  return { success: true, data: valores };
+}

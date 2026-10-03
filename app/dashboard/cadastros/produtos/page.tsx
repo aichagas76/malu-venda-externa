@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
-import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto } from './actions';
+import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos } from './actions';
 
 const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
 
@@ -42,13 +42,15 @@ export default function ProdutosPage() {
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [itensCatalogo, setItensCatalogo] = useState<{ id: string; nome: string; unidade: string; valor_unitario: number }[]>([]);
   const [itensProduto, setItensProduto] = useState<{ item_id: string; quantidade: string }[]>([]);
+  const [valoresProdutos, setValoresProdutos] = useState<Record<string, number>>({});
   const [produtoItens, setProdutoItens] = useState<Produto | null>(null);
   const [enviandoItens, setEnviandoItens] = useState(false);
   const [novoItemId, setNovoItemId] = useState('');
   const [novaQtd, setNovaQtd] = useState('');
 
   const carregarProdutos = useCallback(async () => {
-    const [result, cats, its] = await Promise.all([listarProdutos(), listarCategorias(), listarItens()]);
+    const [result, cats, its, vals] = await Promise.all([listarProdutos(), listarCategorias(), listarItens(), listarValoresProdutos()]);
+    if (vals.success) setValoresProdutos(vals.data);
     if (result.success) setProdutos(result.data as Produto[]);
     if (cats.success) setCategorias(cats.data as { id: string; nome: string }[]);
     if (its.success) setItensCatalogo(its.data as unknown as { id: string; nome: string; unidade: string; valor_unitario: number }[]);
@@ -83,7 +85,10 @@ export default function ProdutosPage() {
       produtoItens.id,
       itensProduto.map(p => ({ item_id: p.item_id, quantidade: parseFloat(p.quantidade) }))
     );
-    if (res.success) setProdutoItens(null);
+    if (res.success) {
+      setProdutoItens(null);
+      await carregarProdutos();
+    }
     else alert(res.error || 'Erro ao salvar itens');
     setEnviandoItens(false);
   };
@@ -198,6 +203,7 @@ export default function ProdutosPage() {
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Código (SKU)</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Nome</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Peso</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Valor Unitário</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Data de Cadastro</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Ações</th>
             </tr>
@@ -205,7 +211,7 @@ export default function ProdutosPage() {
           <tbody>
             {produtos.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
                   Nenhum produto cadastrado
                 </td>
               </tr>
@@ -223,6 +229,9 @@ export default function ProdutosPage() {
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.sku || '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{produto.nome}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.peso ? `${produto.peso} g` : '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                    {valoresProdutos[produto.id] ? valoresProdutos[produto.id].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}
+                  </td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {produto.criado_em ? new Date(produto.criado_em).toLocaleDateString('pt-BR') : '—'}
                   </td>
@@ -472,6 +481,13 @@ export default function ProdutosPage() {
                   );
                 })
               )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
+              <span style={{ color: '#64748b', fontWeight: '600' }}>Valor unitário do produto</span>
+              <span style={{ color: '#1e293b', fontWeight: '700' }}>
+                {itensProduto.reduce((total, ip) => total + (Number(itensCatalogo.find(i => i.id === ip.item_id)?.valor_unitario) || 0) * (parseFloat(ip.quantidade) || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
