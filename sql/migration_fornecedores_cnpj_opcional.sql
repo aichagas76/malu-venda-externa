@@ -1,0 +1,1 @@
+ALTER TABLE fornecedores ALTER COLUMN cnpj DROP NOT NULL;

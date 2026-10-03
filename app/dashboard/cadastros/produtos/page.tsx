@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarCategorias } from '../categorias/actions';
-import { listarProdutos,criarProduto, atualizarProduto, deletarProduto } from './actions';
+import { listarItens } from '../itens/actions';
+import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto } from './actions';
+
+const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
 
 interface Produto {
   id: string;
@@ -37,23 +40,46 @@ export default function ProdutosPage() {
   const streamRef = useRef<MediaStream | null>(null);
 
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
+  const [itensCatalogo, setItensCatalogo] = useState<{ id: string; nome: string; unidade: string; valor_unitario: number }[]>([]);
+  const [itensProduto, setItensProduto] = useState<{ item_id: string; quantidade: string }[]>([]);
+  const [novoItemId, setNovoItemId] = useState('');
+  const [novaQtd, setNovaQtd] = useState('');
 
   const carregarProdutos = useCallback(async () => {
-    const [result, cats] = await Promise.all([listarProdutos(), listarCategorias()]);
+    const [result, cats, its] = await Promise.all([listarProdutos(), listarCategorias(), listarItens()]);
     if (result.success) setProdutos(result.data as Produto[]);
     if (cats.success) setCategorias(cats.data as { id: string; nome: string }[]);
+    if (its.success) setItensCatalogo(its.data as unknown as { id: string; nome: string; unidade: string; valor_unitario: number }[]);
     setLoading(false);
   }, []);
 
   useEffect(() => { carregarProdutos(); }, [carregarProdutos]);
 
+  const adicionarItem = () => {
+    const qtd = parseFloat(novaQtd);
+    if (!novoItemId) return alert('Selecione um item');
+    if (!(qtd > 0)) return alert('Informe uma quantidade maior que zero');
+    setItensProduto(prev => [...prev, { item_id: novoItemId, quantidade: novaQtd }]);
+    setNovoItemId('');
+    setNovaQtd('');
+  };
+
   const abrirNovoProduto = () => {
     setEditando(null);
     setFormData(FORM_INICIAL);
+    setItensProduto([]);
+    setNovoItemId('');
+    setNovaQtd('');
     setShowModal(true);
   };
 
-  const abrirEdicao = (produto: Produto) => {
+  const abrirEdicao = async (produto: Produto) => {
+    setItensProduto([]);
+    setNovoItemId('');
+    setNovaQtd('');
+    listarItensProduto(produto.id).then(res => {
+      if (res.success) setItensProduto((res.data as { item_id: string; quantidade: number }[]).map(r => ({ item_id: r.item_id, quantidade: String(r.quantidade) })));
+    });
     setEditando(produto);
     setFormData({
       nome: produto.nome || '',
@@ -108,6 +134,19 @@ export default function ProdutosPage() {
       : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto);
 
     if (result.success) {
+      const produtoId = editando ? editando.id : (result as { data?: { id: string } }).data?.id;
+      if (produtoId) {
+        const resItens = await salvarItensProduto(
+          produtoId,
+          itensProduto.map(p => ({ item_id: p.item_id, quantidade: parseFloat(p.quantidade) }))
+        );
+        if (!resItens.success) {
+          alert(`Produto salvo, mas os itens não: ${resItens.error}`);
+          await carregarProdutos();
+          setEnviando(false);
+          return;
+        }
+      }
       await carregarProdutos();
       setShowModal(false);
     } else {
@@ -213,7 +252,7 @@ export default function ProdutosPage() {
         <div onClick={() => setShowModal(false)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
 
             <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 20px' }}>
               {editando ? 'Editar Produto' : 'Novo Produto'}
@@ -327,6 +366,58 @@ export default function ProdutosPage() {
                   placeholder="Peso em gramas"
                   style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
+              </div>
+
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Itens do produto</label>
+
+                {itensProduto.length > 0 && (
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '10px', overflow: 'hidden' }}>
+                    {itensProduto.map((ip) => {
+                      const item = itensCatalogo.find(i => i.id === ip.item_id);
+                      const subtotal = item ? Number(item.valor_unitario) * (parseFloat(ip.quantidade) || 0) : 0;
+                      return (
+                        <div key={ip.item_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: '#1e293b', fontWeight: '500' }}>{item?.nome || 'Item removido'}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '11px' }}>
+                              {item ? `${UNIDADES_ITEM[item.unidade] || item.unidade} · ${Number(item.valor_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 4 })}` : ''}
+                              {item ? ` · Subtotal ${subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}
+                            </div>
+                          </div>
+                          <input
+                            type="number" min="0" step="any" value={ip.quantidade}
+                            onChange={e => setItensProduto(prev => prev.map(p => p.item_id === ip.item_id ? { ...p, quantidade: e.target.value } : p))}
+                            aria-label="Quantidade"
+                            style={{ width: '80px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                          <button type="button" title="Remover item" aria-label="Remover item"
+                            onClick={() => setItensProduto(prev => prev.filter(p => p.item_id !== ip.item_id))}
+                            style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select value={novoItemId} onChange={e => setNovoItemId(e.target.value)}
+                    style={{ flex: 1, minWidth: 0, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' }}>
+                    <option value="">Selecione um item</option>
+                    {itensCatalogo.filter(i => !itensProduto.some(p => p.item_id === i.id)).map(i => (
+                      <option key={i.id} value={i.id}>{i.nome}</option>
+                    ))}
+                  </select>
+                  <input type="number" min="0" step="any" value={novaQtd} onChange={e => setNovaQtd(e.target.value)}
+                    placeholder="Qtd" aria-label="Quantidade"
+                    style={{ width: '80px', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+                  <button type="button" onClick={adicionarItem}
+                    style={{ padding: '10px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Adicionar
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -74,3 +74,41 @@ export async function deletarProduto(produtoId: string) {
   revalidatePath('/dashboard/cadastros/produtos');
   return { success: true };
 }
+
+export async function listarItensProduto(produtoId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('produto_itens')
+    .select('item_id, quantidade')
+    .eq('empresa_id', EMPRESA_ID)
+    .eq('produto_id', produtoId);
+
+  if (error) return { success: false, error: error.message, data: [] };
+  return { success: true, data: data || [] };
+}
+
+export async function salvarItensProduto(produtoId: string, itens: { item_id: string; quantidade: number }[]) {
+  const supabase = await createClient();
+
+  if (itens.some(i => !i.item_id || !(i.quantidade > 0))) {
+    return { success: false, error: 'Informe uma quantidade maior que zero para cada item' };
+  }
+
+  if (itens.length > 0) {
+    const { error } = await supabase
+      .from('produto_itens')
+      .upsert(
+        itens.map(i => ({ empresa_id: EMPRESA_ID, produto_id: produtoId, item_id: i.item_id, quantidade: i.quantidade })),
+        { onConflict: 'produto_id,item_id' }
+      );
+    if (error) return { success: false, error: error.message };
+  }
+
+  let remover = supabase.from('produto_itens').delete().eq('produto_id', produtoId).eq('empresa_id', EMPRESA_ID);
+  if (itens.length > 0) remover = remover.not('item_id', 'in', `(${itens.map(i => i.item_id).join(',')})`);
+  const { error: errDel } = await remover;
+  if (errDel) return { success: false, error: errDel.message };
+
+  revalidatePath('/dashboard/cadastros/produtos');
+  return { success: true };
+}
