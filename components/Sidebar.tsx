@@ -6,10 +6,16 @@ import Image from 'next/image';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/clientes', label: 'Clientes', icon: '👥' },
-  { href: '/dashboard/produtos', label: 'Produtos', icon: '📦' },
   { href: '/dashboard/pedidos', label: 'Pedidos', icon: '🛒' },
   { href: '/dashboard/fabricacao', label: 'Etapas da Produção', icon: '⚙️' },
+  {
+    label: 'Cadastros',
+    icon: '📋',
+    submenu: [
+      { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
+      { href: '/dashboard/cadastros/produtos', label: 'Produtos' },
+    ]
+  },
 ];
 
 export default function Sidebar() {
@@ -59,8 +65,57 @@ export default function Sidebar() {
         gap: '0.5rem',
         flex: 1
       }}>
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+        {menuItems.map((item: any) => {
+          const isActive = 'href' in item && pathname === item.href;
+          const hasSubmenu = 'submenu' in item;
+          const isSubmenuActive = hasSubmenu && item.submenu.some((sub: any) => pathname.startsWith(sub.href));
+
+          if (hasSubmenu) {
+            return (
+              <div key={item.label}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.875rem 1.25rem',
+                  borderRadius: '0.75rem',
+                  color: isSubmenuActive ? '#fbbf24' : '#94a3b8',
+                  fontSize: '0.95rem',
+                  fontWeight: isSubmenuActive ? '600' : '500',
+                }}>
+                  <span style={{ fontSize: '1.25rem', width: '24px', textAlign: 'center' }}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </div>
+                <div style={{ paddingLeft: '1rem' }}>
+                  {item.submenu.map((sub: any) => {
+                    const isSubActive = pathname === sub.href;
+                    return (
+                      <Link
+                        key={sub.href}
+                        href={sub.href}
+                        style={{
+                          display: 'block',
+                          padding: '0.625rem 1rem',
+                          borderRadius: '0.5rem',
+                          textDecoration: 'none',
+                          color: isSubActive ? '#fbbf24' : '#94a3b8',
+                          backgroundColor: isSubActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                          borderLeft: isSubActive ? '3px solid #fbbf24' : '3px solid transparent',
+                          paddingLeft: isSubActive ? 'calc(1rem - 3px)' : '1rem',
+                          fontSize: '0.875rem',
+                          fontWeight: isSubActive ? '600' : '500',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {sub.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}
