@@ -40,6 +40,9 @@ export default function ItensPage() {
   const [editando, setEditando] = useState<Item | null>(null);
   const [formData, setFormData] = useState<FormData>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroFornecedor, setFiltroFornecedor] = useState('');
+  const [filtroUnidade, setFiltroUnidade] = useState('');
 
   const [showImportar, setShowImportar] = useState(false);
   const [nomeArquivo, setNomeArquivo] = useState('');
@@ -163,6 +166,12 @@ export default function ItensPage() {
     return <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Carregando...</div>;
   }
 
+  const itensFiltrados = itens.filter(i =>
+    (!filtroNome.trim() || (i.nome || '').toLowerCase().includes(filtroNome.trim().toLowerCase())) &&
+    (!filtroFornecedor || nomeFornecedor(i) === filtroFornecedor) &&
+    (!filtroUnidade || i.unidade === filtroUnidade)
+  );
+
   const th = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: '600', color: 'var(--texto-suave)' };
   const campo = { width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' as const, backgroundColor: 'white' };
   const rotulo = { display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' };
@@ -185,6 +194,33 @@ export default function ItensPage() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
+          <label style={rotulo}>Nome</label>
+          <input type="text" value={filtroNome} onChange={e => setFiltroNome(e.target.value)} placeholder="Filtrar por nome" style={campo} />
+        </div>
+        <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
+          <label style={rotulo}>Fornecedor</label>
+          <select value={filtroFornecedor} onChange={e => setFiltroFornecedor(e.target.value)} style={campo}>
+            <option value="">Todos os fornecedores</option>
+            {fornecedores.map(f => <option key={f.id} value={f.nome}>{f.nome}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: '1 1 160px', maxWidth: '220px' }}>
+          <label style={rotulo}>Unidade</label>
+          <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} style={campo}>
+            <option value="">Todas as unidades</option>
+            {Object.entries(UNIDADES).map(([valor, label]) => <option key={valor} value={valor}>{label}</option>)}
+          </select>
+        </div>
+        {(filtroNome || filtroFornecedor || filtroUnidade) && (
+          <button type="button" onClick={() => { setFiltroNome(''); setFiltroFornecedor(''); setFiltroUnidade(''); }}
+            style={{ padding: '10px 16px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--borda)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -197,14 +233,14 @@ export default function ItensPage() {
             </tr>
           </thead>
           <tbody>
-            {itens.length === 0 ? (
+            {itensFiltrados.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
-                  Nenhum item cadastrado
+                  {itens.length === 0 ? 'Nenhum item cadastrado' : 'Nenhum item encontrado com os filtros aplicados'}
                 </td>
               </tr>
             ) : (
-              itens.map((item) => (
+              itensFiltrados.map((item) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--borda)' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto)' }}>{item.nome}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto-suave)' }}>{UNIDADES[item.unidade] || item.unidade}</td>
