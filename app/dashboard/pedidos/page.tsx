@@ -65,6 +65,8 @@ export default function PedidosPage() {
   const [editItemBanho, setEditItemBanho] = useState('');
 
   const [clienteId, setClienteId] = useState('');
+  const [clienteBusca, setClienteBusca] = useState('');
+  const [clienteAberto, setClienteAberto] = useState(false);
   const [tipo, setTipo] = useState('');
   const [selectedProdutos, setSelectedProdutos] = useState<string[]>([]);
   const [banho, setBanho] = useState('');
@@ -81,7 +83,7 @@ export default function PedidosPage() {
       listarClientes(),
     ]);
     if (pedidosRes.success) setPedidos(pedidosRes.data as Pedido[]);
-    if (clientesRes.success) setClientes(clientesRes.data);
+    if (clientesRes.success) setClientes([...clientesRes.data].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })));
     setLoading(false);
   }
 
@@ -92,6 +94,8 @@ export default function PedidosPage() {
     if (result.success) {
       setEditingPedidoId(result.data.id);
       setPedidos([result.data as Pedido, ...pedidos]);
+      setClienteId('');
+      setClienteBusca('');
     } else {
       setError(result.error || 'Erro ao criar pedido');
     }
@@ -309,10 +313,27 @@ export default function PedidosPage() {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Cliente *</label>
-              <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
-                <option value="">Selecione um cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </select>
+              <div style={{ position: 'relative' }}>
+                <input type="text" value={clienteBusca} placeholder="Digite para buscar o cliente"
+                  onChange={(e) => { setClienteBusca(e.target.value); setClienteId(''); setClienteAberto(true); }}
+                  onFocus={() => setClienteAberto(true)}
+                  onBlur={() => setTimeout(() => setClienteAberto(false), 150)}
+                  style={{ ...inputStyle, color: '#111827' }} />
+                {clienteAberto && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: '2px', maxHeight: '220px', overflowY: 'auto', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', boxShadow: 'var(--sombra-media)' }}>
+                    {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).map(c => (
+                      <div key={c.id}
+                        onMouseDown={(e) => { e.preventDefault(); setClienteId(c.id); setClienteBusca(c.nome); setClienteAberto(false); }}
+                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', backgroundColor: c.id === clienteId ? 'var(--ouro-suave)' : 'white', color: 'var(--texto)' }}>
+                        {c.nome}
+                      </div>
+                    ))}
+                    {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).length === 0 && (
+                      <div style={{ padding: '7px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum cliente encontrado</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <button onClick={handleCriarPedido} disabled={saving}
               style={{ ...btnSm, backgroundColor: saving ? 'var(--texto-mudo)' : 'var(--acao)', color: 'white', whiteSpace: 'nowrap', padding: '7px 16px' }}>
