@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { useState } from 'react';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -13,13 +14,14 @@ const menuItems = [
     icon: '📋',
     submenu: [
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
-      { href: '/dashboard/produtos', label: 'Produtos' },
+      { href: '/dashboard/cadastros/produtos', label: 'Produtos' },
     ]
   },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
   return (
     <aside style={{
@@ -68,53 +70,66 @@ export default function Sidebar() {
         {menuItems.map((item: any) => {
           const isActive = 'href' in item && pathname === item.href;
           const hasSubmenu = 'submenu' in item;
-          const isSubmenuActive = hasSubmenu && item.submenu.some((sub: any) => pathname.startsWith(sub.href));
+          const isSubmenuActive = hasSubmenu && item.submenu.some((sub: any) => pathname === sub.href);
+          const isExpanded = expandedMenu === item.label;
 
           if (hasSubmenu) {
             return (
               <div key={item.label}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 1.25rem',
-                  borderRadius: '0.75rem',
-                  color: isSubmenuActive ? '#fbbf24' : '#94a3b8',
-                  fontSize: '0.95rem',
-                  fontWeight: isSubmenuActive ? '600' : '500',
-                }}>
+                <button
+                  onClick={() => setExpandedMenu(isExpanded ? null : item.label)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.875rem 1.25rem',
+                    borderRadius: '0.75rem',
+                    border: 'none',
+                    backgroundColor: isSubmenuActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                    color: isSubmenuActive ? '#fbbf24' : '#94a3b8',
+                    fontSize: '0.95rem',
+                    fontWeight: isSubmenuActive ? '600' : '500',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    transition: 'all 0.2s ease'
+                  }}>
                   <span style={{ fontSize: '1.25rem', width: '24px', textAlign: 'center' }}>{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-                <div style={{ paddingLeft: '0.5rem' }}>
-                  {item.submenu.map((sub: any) => {
-                    const isSubActive = pathname === sub.href;
-                    return (
-                      <Link
-                        key={sub.href}
-                        href={sub.href}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.75rem',
-                          padding: '0.625rem 1.25rem',
-                          borderRadius: '0.5rem',
-                          textDecoration: 'none',
-                          color: isSubActive ? '#fbbf24' : '#94a3b8',
-                          backgroundColor: isSubActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                          borderLeft: isSubActive ? '4px solid #fbbf24' : '4px solid transparent',
-                          paddingLeft: isSubActive ? 'calc(1.25rem - 4px)' : '1.25rem',
-                          fontSize: '0.875rem',
-                          fontWeight: isSubActive ? '600' : '500',
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        <span style={{ fontSize: '0.75rem', width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
-                        {sub.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  <span style={{ fontSize: '0.75rem', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                </button>
+
+                {isExpanded && (
+                  <div style={{ paddingLeft: '1rem' }}>
+                    {item.submenu.map((sub: any) => {
+                      const isSubActive = pathname === sub.href;
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            padding: '0.625rem 1.25rem',
+                            borderRadius: '0.5rem',
+                            textDecoration: 'none',
+                            color: isSubActive ? '#fbbf24' : '#94a3b8',
+                            backgroundColor: isSubActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                            borderLeft: isSubActive ? '4px solid #fbbf24' : '4px solid transparent',
+                            paddingLeft: isSubActive ? 'calc(1.25rem - 4px)' : '1.25rem',
+                            fontSize: '0.875rem',
+                            fontWeight: isSubActive ? '600' : '500',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.75rem', width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
+                          {sub.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           }
