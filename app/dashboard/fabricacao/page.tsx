@@ -85,6 +85,31 @@ function agruparPorProduto(itens: ItemFabricacao[]): GrupoProduto[] {
 }
 
 // SVG icons
+const IconMontador = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="8" cy="5" r="2.6" />
+    <path d="M8 8.2v7" />
+    <path d="M8 15.2l-3 6" />
+    <path d="M8 15.2l3 6" />
+    <path d="M8 10.5l5.5-1.5" />
+    <circle cx="14.6" cy="8.6" r="1.7" />
+    <path d="M15.8 9.8l5 5" />
+  </svg>
+);
+
+const IconSoldador = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="8" cy="5" r="2.6" />
+    <rect x="5.4" y="4.6" width="5.2" height="2.2" rx="0.6" fill="currentColor" stroke="none" />
+    <path d="M8 8.2v7" />
+    <path d="M8 15.2l-3 6" />
+    <path d="M8 15.2l3 6" />
+    <path d="M8 10.5l6 1.2" />
+    <path d="M14 11.7l2.4.5" />
+    <path d="M19 9l1.4-1.6M19.6 12.4h2.2M19 15.6l1.4 1.6" />
+  </svg>
+);
+
 const IconBack = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="15 18 9 12 15 6"/>
@@ -317,7 +342,7 @@ export default function FabricacaoPage() {
             style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                {soldadorPopup.modo === 'saida' ? '⚡ Saída para Solda' : '📥 Retorno da Solda'}
+                {soldadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconSoldador size={18} /> Saída para Solda</span> : '📥 Retorno da Solda'}
               </h3>
               <button onClick={() => setSoldadorPopup(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
@@ -405,7 +430,7 @@ export default function FabricacaoPage() {
             style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', maxWidth: '380px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                {prestadorPopup.modo === 'saida' ? '📤 Saída para Rua' : '📥 Retorno da Rua'}
+                {prestadorPopup.modo === 'saida' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMontador size={18} /> Saída para Rua</span> : '📥 Retorno da Rua'}
               </h3>
               <button onClick={() => setPrestadorPopup(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}>
@@ -675,9 +700,9 @@ export default function FabricacaoPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    width: '18px',
-                                    height: '18px',
-                                    borderRadius: '3px',
+                                    width: '22px',
+                                    height: '22px',
+                                    borderRadius: '4px',
                                     border: `1px solid ${
                                       item.prestador_data_retorno ? '#10b981' :
                                       item.prestador_nome ? '#d97706' :
@@ -697,7 +722,7 @@ export default function FabricacaoPage() {
                                     fontWeight: '700',
                                     opacity: item.prestador_data_retorno ? 0.6 : 1,
                                   }}>
-                                  {item.prestador_data_retorno ? '✓' : '📍'}
+                                  {item.prestador_data_retorno ? '✓' : <IconMontador size={16} />}
                                 </button>
                               )}
 
@@ -729,9 +754,9 @@ export default function FabricacaoPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    width: '18px',
-                                    height: '18px',
-                                    borderRadius: '3px',
+                                    width: '22px',
+                                    height: '22px',
+                                    borderRadius: '4px',
                                     border: `1px solid ${
                                       item.soldador_data_retorno ? '#10b981' :
                                       item.soldador_nome ? '#d97706' :
@@ -751,7 +776,7 @@ export default function FabricacaoPage() {
                                     fontWeight: '700',
                                     opacity: item.soldador_data_retorno ? 0.6 : 1,
                                   }}>
-                                  {item.soldador_data_retorno ? '✓' : '⚡'}
+                                  {item.soldador_data_retorno ? '✓' : <IconSoldador size={16} />}
                                 </button>
                               )}
 
@@ -808,7 +833,7 @@ export default function FabricacaoPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600' }}>🛣️ Na rua</span>
+                                    <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><IconMontador size={11} /> Na rua</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       {item.prestador_nome} ({new Date(item.prestador_data_saida!).toLocaleDateString('pt-BR')})
                                     </span>
@@ -829,7 +854,7 @@ export default function FabricacaoPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600' }}>⚡ Na solda</span>
+                                    <span style={{ fontSize: '9px', color: '#d97706', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><IconSoldador size={11} /> Na solda</span>
                                     <span style={{ fontSize: '8px', color: '#94a3b8' }}>
                                       {item.soldador_nome} ({new Date(item.soldador_data_saida!).toLocaleDateString('pt-BR')})
                                     </span>
