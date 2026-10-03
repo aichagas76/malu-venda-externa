@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, ChevronDown } from 'lucide-react';
 import {
   listarPedidos,
   listarClientes,
@@ -314,24 +314,34 @@ export default function PedidosPage() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Cliente *</label>
               <div style={{ position: 'relative' }}>
-                <input type="text" value={clienteBusca} placeholder="Digite para buscar o cliente"
-                  onChange={(e) => { setClienteBusca(e.target.value); setClienteId(''); setClienteAberto(true); }}
-                  onFocus={() => setClienteAberto(true)}
-                  onBlur={() => setTimeout(() => setClienteAberto(false), 150)}
-                  style={{ ...inputStyle, color: '#111827' }} />
+                <button type="button" onClick={() => { setClienteAberto(!clienteAberto); setClienteBusca(''); }}
+                  style={{ ...inputStyle, color: clienteId ? '#111827' : 'var(--texto-suave)', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{clientes.find(c => c.id === clienteId)?.nome || 'Selecione um cliente'}</span>
+                  <ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
+                </button>
                 {clienteAberto && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: '2px', maxHeight: '220px', overflowY: 'auto', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', boxShadow: 'var(--sombra-media)' }}>
-                    {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).map(c => (
-                      <div key={c.id}
-                        onMouseDown={(e) => { e.preventDefault(); setClienteId(c.id); setClienteBusca(c.nome); setClienteAberto(false); }}
-                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', backgroundColor: c.id === clienteId ? 'var(--ouro-suave)' : 'white', color: 'var(--texto)' }}>
-                        {c.nome}
+                  <>
+                    <div onClick={() => setClienteAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 19 }} />
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: '2px', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', boxShadow: 'var(--sombra-media)' }}>
+                      <div style={{ padding: '6px', borderBottom: '1px solid var(--borda)' }}>
+                        <input type="text" autoFocus value={clienteBusca} placeholder="Buscar cliente..."
+                          onChange={(e) => setClienteBusca(e.target.value)}
+                          style={{ ...inputStyle, color: '#111827' }} />
                       </div>
-                    ))}
-                    {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).length === 0 && (
-                      <div style={{ padding: '7px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum cliente encontrado</div>
-                    )}
-                  </div>
+                      <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                        {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).map(c => (
+                          <div key={c.id}
+                            onClick={() => { setClienteId(c.id); setClienteBusca(''); setClienteAberto(false); }}
+                            style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', backgroundColor: c.id === clienteId ? 'var(--ouro-suave)' : 'white', color: 'var(--texto)' }}>
+                            {c.nome}
+                          </div>
+                        ))}
+                        {clientes.filter(c => c.nome.toLowerCase().includes(clienteBusca.trim().toLowerCase())).length === 0 && (
+                          <div style={{ padding: '7px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum cliente encontrado</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
