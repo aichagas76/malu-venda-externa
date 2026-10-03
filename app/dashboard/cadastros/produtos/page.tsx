@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
 import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos } from './actions';
-import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, type LinhaProduto } from './importar';
+import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, indexarFotos, reduzirImagem, enviarFoto, type LinhaProduto, type FotosIndexadas } from './importar';
 
 const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
 
@@ -37,7 +37,10 @@ export default function ProdutosPage() {
   const [linhasImport, setLinhasImport] = useState<LinhaProduto[]>([]);
   const [erroImport, setErroImport] = useState('');
   const [importando, setImportando] = useState(false);
-  const [resultadoImport, setResultadoImport] = useState<{ criados: number; ignorados: number; categoriasCriadas: number } | null>(null);
+  const [resultadoImport, setResultadoImport] = useState<{ criados: number; ignorados: number; categoriasCriadas: number; fotosEnviadas: number; fotosFalharam: number; fotosFaltando: number; motivoFoto: string } | null>(null);
+  const [fotosIndex, setFotosIndex] = useState<FotosIndexadas | null>(null);
+  const [resumoFotos, setResumoFotos] = useState('');
+  const [progressoFotos, setProgressoFotos] = useState('');
   const [editando, setEditando] = useState<Produto | null>(null);
   const [formData, setFormData] = useState<FormData>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
@@ -174,6 +177,9 @@ export default function ProdutosPage() {
     setLinhasImport([]);
     setErroImport('');
     setResultadoImport(null);
+    setFotosIndex(null);
+    setResumoFotos('');
+    setProgressoFotos('');
     setShowImportar(true);
   };
 
@@ -194,6 +200,22 @@ export default function ProdutosPage() {
     }
   };
 
+  const handleFotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivos = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (arquivos.length === 0) return;
+    setErroImport('');
+    try {
+      const indice = await indexarFotos(arquivos);
+      setFotosIndex(indice);
+      setResumoFotos(`${indice.total} foto(s) encontrada(s) em ${arquivos.length} arquivo(s)`);
+    } catch {
+      setFotosIndex(null);
+      setResumoFotos('');
+      setErroImport('Não foi possível ler as fotos. Envie um arquivo .zip ou imagens (.jpg, .png).');
+    }
+  };
+
   const codigosExistentes = new Set(produtos.map(pr => (pr.sku || '').trim().toLowerCase()));
   const categoriasExistentes = new Set(categorias.map(c => c.nome.trim().toLowerCase()));
 
@@ -208,7 +230,8 @@ export default function ProdutosPage() {
       else if (vistos.has(chave)) { situacao = 'duplicado'; motivo = 'Código repetido na planilha (será ignorado)'; }
       if (situacao === 'ok') vistos.add(chave);
       const categoriaNova = situacao === 'ok' && !!l.categoria && !categoriasExistentes.has(l.categoria.toLowerCase());
-      return { ...l, situacao, motivo, categoriaNova };
+      const fotoFaltando = situacao === 'ok' && l.fotoTipo === 'arquivo' && !fotosIndex?.nomes.has(l.arquivo);
+      return { ...l, situacao, motivo, categoriaNova, fotoFaltando };
     });
   })();
 
@@ -217,12 +240,67 @@ export default function ProdutosPage() {
   const duplicadas = analise.filter(l => l.situacao === 'duplicado').length;
   const categoriasNovas = Array.from(new Map(validas.filter(l => l.categoriaNova).map(l => [l.categoria.toLowerCase(), l.categoria])).values());
 
+  const fotosParaEnviar = Array.from(new Set(validas.filter(l => l.fotoTipo === 'arquivo' && fotosIndex?.nomes.has(l.arquivo)).map(l => l.arquivo)));
+  const fotosFaltando = validas.filter(l => l.fotoFaltando).length;
+
   const handleImportar = async () => {
     if (validas.length === 0) return;
     setImportando(true);
-    const result = await importarProdutos(validas.map(l => ({ codigo: l.codigo, nome: l.nome, categoria: l.categoria, peso: l.peso, foto: l.foto })));
+    setErroImport('');
+
+    const urls = new Map<string, string>();
+    let fotosFalharam = 0;
+    let motivoFoto = '';
+
+    if (fotosIndex && fotosParaEnviar.length > 0) {
+      let feitas = 0;
+      const fila = [...fotosParaEnviar];
+      const trabalhador = async () => {
+        while (fila.length > 0) {
+          const nome = fila.shift() as string;
+          try {
+            const original = await fotosIndex.obter(nome);
+            if (!original) throw new Error('arquivo não encontrado');
+            const reduzida = await reduzirImagem(original);
+            urls.set(nome, await enviarFoto(reduzida));
+          } catch (err) {
+            fotosFalharam++;
+            if (!motivoFoto) motivoFoto = err instanceof Error ? err.message : '';
+          }
+          feitas++;
+          setProgressoFotos(`Enviando fotos: ${feitas} de ${fotosParaEnviar.length}...`);
+        }
+      };
+      setProgressoFotos(`Enviando fotos: 0 de ${fotosParaEnviar.length}...`);
+      await Promise.all([trabalhador(), trabalhador(), trabalhador()]);
+
+      if (urls.size === 0) {
+        setErroImport(`Nenhuma foto pôde ser enviada${motivoFoto ? ` (${motivoFoto})` : ''}. Nada foi importado.`);
+        setProgressoFotos('');
+        setImportando(false);
+        return;
+      }
+    }
+
+    setProgressoFotos('Gravando produtos...');
+    const result = await importarProdutos(validas.map(l => ({
+      codigo: l.codigo,
+      nome: l.nome,
+      categoria: l.categoria,
+      peso: l.peso,
+      foto: l.fotoTipo === 'link' ? l.foto : l.fotoTipo === 'arquivo' ? (urls.get(l.arquivo) || '') : '',
+    })));
+    setProgressoFotos('');
     if (result.success) {
-      setResultadoImport({ criados: result.criados ?? 0, ignorados: result.ignorados ?? 0, categoriasCriadas: result.categoriasCriadas ?? 0 });
+      setResultadoImport({
+        criados: result.criados ?? 0,
+        ignorados: result.ignorados ?? 0,
+        categoriasCriadas: result.categoriasCriadas ?? 0,
+        fotosEnviadas: urls.size,
+        fotosFalharam,
+        fotosFaltando,
+        motivoFoto,
+      });
       setLinhasImport([]);
       await carregarProdutos();
     } else {
@@ -655,7 +733,7 @@ export default function ProdutosPage() {
             <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px' }}>Importar produtos por planilha</h2>
             <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
               Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Foto</b>, <b>Categoria</b>, <b>Código</b>, <b>Nome</b> e <b>Peso</b> (em gramas).
-              Só o <b>Código</b> é obrigatório. Na coluna <b>Foto</b>, coloque o <b>link</b> da imagem (começando com http); imagens coladas dentro do Excel não são importadas.
+              Só o <b>Código</b> é obrigatório. Na coluna <b>Foto</b>, coloque o <b>link</b> da imagem (http...) ou o <b>nome do arquivo</b> (como no AppSheet: <b>Produto_Images/foto.jpg</b>) e envie as fotos abaixo, em .zip ou soltas.
             </p>
 
             {resultadoImport ? (
@@ -664,6 +742,14 @@ export default function ProdutosPage() {
                 {resultadoImport.criados} produto(s) criado(s)
                 {resultadoImport.ignorados > 0 && <> · {resultadoImport.ignorados} ignorado(s) por já existirem</>}
                 {resultadoImport.categoriasCriadas > 0 && <> · {resultadoImport.categoriasCriadas} categoria(s) nova(s) cadastrada(s)</>}
+                {resultadoImport.fotosEnviadas > 0 && <><br />{resultadoImport.fotosEnviadas} foto(s) enviada(s)</>}
+                {(resultadoImport.fotosFaltando > 0 || resultadoImport.fotosFalharam > 0) && (
+                  <span style={{ color: '#b45309' }}>
+                    <br />
+                    {resultadoImport.fotosFaltando > 0 && <>{resultadoImport.fotosFaltando} produto(s) ficaram sem foto por não ter o arquivo na pasta enviada. </>}
+                    {resultadoImport.fotosFalharam > 0 && <>{resultadoImport.fotosFalharam} foto(s) não puderam ser enviadas{resultadoImport.motivoFoto ? ` (${resultadoImport.motivoFoto})` : ''}.</>}
+                  </span>
+                )}
               </div>
             ) : (
               <>
@@ -679,6 +765,14 @@ export default function ProdutosPage() {
                   {nomeArquivo && <span style={{ fontSize: '12px', color: '#64748b' }}>{nomeArquivo}</span>}
                 </div>
 
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <label style={{ padding: '9px 14px', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #f59e0b', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Escolher fotos (.zip ou imagens)
+                    <input type="file" multiple accept=".zip,image/*" onChange={handleFotos} style={{ display: 'none' }} />
+                  </label>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>{resumoFotos || 'Opcional. Só necessário se a coluna Foto tiver nomes de arquivo.'}</span>
+                </div>
+
                 {erroImport && (
                   <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
                     {erroImport}
@@ -691,6 +785,7 @@ export default function ProdutosPage() {
                       <span style={{ color: '#047857', fontWeight: '600' }}>{validas.length} pronto(s) para importar</span>
                       {duplicadas > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{duplicadas} ignorado(s)</span>}
                       {comErro > 0 && <span style={{ color: '#b91c1c', fontWeight: '600' }}>{comErro} com erro</span>}
+                      {fotosFaltando > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{fotosFaltando} sem arquivo de foto (entram sem foto)</span>}
                     </div>
                     {categoriasNovas.length > 0 && (
                       <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 10px' }}>
@@ -714,7 +809,7 @@ export default function ProdutosPage() {
                           {analise.map(l => (
                             <tr key={l.linha} style={{ borderTop: '1px solid #f1f5f9', backgroundColor: l.situacao === 'erro' ? '#fef2f2' : l.situacao === 'duplicado' ? '#fffbeb' : 'transparent' }}>
                               <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{l.linha}</td>
-                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.foto ? 'Link' : '—'}</td>
+                              <td style={{ padding: '6px 10px', color: l.fotoFaltando ? '#b45309' : '#475569' }}>{l.fotoTipo === 'link' ? 'Link' : l.fotoTipo === 'arquivo' ? (l.fotoFaltando ? 'Sem arquivo' : 'Arquivo ✓') : '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.categoria || '—'}{l.categoriaNova ? ' (nova)' : ''}</td>
                               <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: '600' }}>{l.codigo || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.nome || '—'}</td>
@@ -740,7 +835,7 @@ export default function ProdutosPage() {
               {!resultadoImport && (
                 <button onClick={handleImportar} disabled={importando || validas.length === 0}
                   style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
-                  {importando ? 'Importando...' : `Importar ${validas.length} produto(s)`}
+                  {importando ? (progressoFotos || 'Importando...') : `Importar ${validas.length} produto(s)`}
                 </button>
               )}
             </div>
