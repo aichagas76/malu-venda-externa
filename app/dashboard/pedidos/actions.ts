@@ -148,6 +148,7 @@ export async function adicionarItensMultiplos(
 
   if (!pedidoId) return { success: false, error: 'Pedido inválido' };
   if (!produtoIds || produtoIds.length === 0) return { success: false, error: 'Selecione pelo menos um produto' };
+  if (!banho) return { success: false, error: 'Selecione o banho' };
   if (!quantidade || quantidade <= 0) return { success: false, error: 'Quantidade inválida' };
   if (valorUnitario < 0) return { success: false, error: 'Valor unitário inválido' };
 
@@ -159,7 +160,7 @@ export async function adicionarItensMultiplos(
     quantidade,
     preco_unitario: preco,
     subtotal: preco * quantidade,
-    banho: banho || null,
+    banho,
   }));
 
   const { error: itensError } = await supabase

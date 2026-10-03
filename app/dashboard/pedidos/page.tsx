@@ -100,10 +100,11 @@ export default function PedidosPage() {
   async function handleAdicionarItens() {
     if (!editingPedidoId) { setError('Pedido inválido'); return; }
     if (selectedProdutos.length === 0) { setError('Selecione pelo menos um produto'); return; }
+    if (!banho) { setError('Selecione o banho'); return; }
     if (!quantidade || quantidade <= 0) { setError('Quantidade inválida'); return; }
 
     setSaving(true);
-    const result = await adicionarItensMultiplos(editingPedidoId, selectedProdutos, quantidade, valorUnitario, banho || undefined);
+    const result = await adicionarItensMultiplos(editingPedidoId, selectedProdutos, quantidade, valorUnitario, banho);
     if (result.success) {
       carregarItensPedido(editingPedidoId);
       carregarDados();
@@ -290,9 +291,9 @@ export default function PedidosPage() {
               </select>
             </div>
             <div style={{ width: '100px' }}>
-              <label style={labelStyle}>Banho</label>
+              <label style={labelStyle}>Banho *</label>
               <select value={banho} onChange={(e) => setBanho(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
-                <option value="">—</option>
+                <option value="">Selecione</option>
                 {BANHOS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
