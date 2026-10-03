@@ -342,8 +342,10 @@ export default function PedidosPage() {
 
       {/* Form - Adicionar Itens (compacto) */}
       {editingPedidoId && (
-        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: 'var(--sombra-sutil)', border: '1px solid var(--borda)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid var(--ouro)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+        <div onClick={() => !saving && setEditingPedidoId(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: 'var(--sombra-modal)', padding: '18px 20px', maxWidth: '760px', width: '94%', maxHeight: '90vh', overflowY: 'auto', borderTop: '3px solid var(--ouro)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Adicionando itens em:</span>
             <span style={{ backgroundColor: 'var(--ouro-suave)', color: 'var(--ouro-escuro)', padding: '3px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
               {pedidos.find(p => p.id === editingPedidoId)?.numero_pedido || '—'}
@@ -419,6 +421,7 @@ export default function PedidosPage() {
               Fechar
             </button>
           </div>
+        </div>
         </div>
       )}
 
