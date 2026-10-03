@@ -26,11 +26,11 @@ const TIPOS = ['Anel', 'Brinco', 'Colar', 'Pulseira', 'Pingente', 'Corrente', 'A
 const BANHOS = ['Ouro', 'Prata', 'Diamante'];
 
 const ETAPA_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  montagem_inicial: { label: 'Montagem Inicial', bg: '#F1F5F9', color: '#334155' },
-  producao:         { label: 'Produção',          bg: '#F1F5F9', color: '#334155' },
-  preparado_banho:  { label: 'Preparado p/ Banho', bg: '#F1F5F9', color: '#334155' },
-  encartelamento:   { label: 'Encartelamento',    bg: '#F1F5F9', color: '#334155' },
-  enviado_cliente:  { label: 'Envio ao Cliente',  bg: 'var(--sucesso-bg)', color: 'var(--sucesso)' },
+  montagem_inicial: { label: 'Montagem Inicial', bg: '#EFF6FF', color: '#1D4ED8' },
+  producao:         { label: 'Produção',          bg: '#FFFBEB', color: '#B45309' },
+  preparado_banho:  { label: 'Preparado p/ Banho', bg: '#F0FDFA', color: '#0F766E' },
+  encartelamento:   { label: 'Encartelamento',    bg: '#F5F3FF', color: '#6D28D9' },
+  enviado_cliente:  { label: 'Envio ao Cliente',  bg: '#ECFDF5', color: '#047857' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {

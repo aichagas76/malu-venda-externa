@@ -8,10 +8,10 @@ import { listarEncarteladores } from '../cadastros/encarteladores/actions';
 import { Factory, ArrowDownToLine, Check } from 'lucide-react';
 
 const ETAPAS = [
-  { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#64748B', bg: '#F8FAFC', border: '#E2E8F0' },
-  { key: 'producao',          label: 'Produção',              cor: '#475569', bg: '#F8FAFC', border: '#E2E8F0' },
-  { key: 'preparado_banho',   label: 'Preparado p/ Banho',   cor: '#334155', bg: '#F8FAFC', border: '#E2E8F0' },
-  { key: 'encartelamento',    label: 'Encartelamento',        cor: '#1E293B', bg: '#F8FAFC', border: '#E2E8F0' },
+  { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
+  { key: 'producao',          label: 'Produção',              cor: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+  { key: 'preparado_banho',   label: 'Preparado p/ Banho',   cor: '#0F766E', bg: '#F0FDFA', border: '#99F6E4' },
+  { key: 'encartelamento',    label: 'Encartelamento',        cor: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
   { key: 'enviado_cliente',   label: 'Envio ao Cliente',      cor: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
 ];
 
