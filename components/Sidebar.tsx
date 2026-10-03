@@ -22,12 +22,12 @@ const menuItems = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean; onFechar?: () => void }) {
   const pathname = usePathname();
-  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(pathname.startsWith('/dashboard/cadastros') ? 'Cadastros' : null);
 
   return (
-    <aside style={{
+    <aside className={`app-sidebar${aberta ? ' aberta' : ''}`} style={{
       width: '280px',
       backgroundColor: '#0f172a',
       color: 'white',
@@ -110,6 +110,7 @@ export default function Sidebar() {
                         <Link
                           key={sub.href}
                           href={sub.href}
+                          onClick={onFechar}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -141,6 +142,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onFechar}
               style={{
                 display: 'flex',
                 alignItems: 'center',
