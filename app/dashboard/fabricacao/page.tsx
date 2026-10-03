@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { listarItensFabricacao, avancarEtapa, voltarEtapa, salvarObservacao, salvarPrestador, salvarSoldador } from './actions';
+import { listarPrestadores } from '../cadastros/prestadores/actions';
+import { listarSoldadores } from '../cadastros/soldadores/actions';
 
 const ETAPAS = [
   { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
@@ -116,6 +118,9 @@ export default function FabricacaoPage() {
   const [prestadorPopup, setPrestadorPopup] = useState<{ itemId: string; nome: string; dataSaida: string; dataRetorno: string; modo: 'saida' | 'retorno' } | null>(null);
   const [soldadorPopup, setSoldadorPopup] = useState<{ itemId: string; nome: string; dataSaida: string; dataRetorno: string; modo: 'saida' | 'retorno' } | null>(null);
 
+  const [prestadoresCadastro, setPrestadoresCadastro] = useState<{ id: string; nome: string }[]>([]);
+  const [soldadoresCadastro, setSoldadoresCadastro] = useState<{ id: string; nome: string }[]>([]);
+
   const carregarItens = useCallback(async () => {
     const result = await listarItensFabricacao();
     if (result.success) setItens(result.data as ItemFabricacao[]);
@@ -123,6 +128,11 @@ export default function FabricacaoPage() {
   }, []);
 
   useEffect(() => { carregarItens(); }, [carregarItens]);
+
+  useEffect(() => {
+    listarPrestadores().then(r => { if (r.success) setPrestadoresCadastro(r.data as { id: string; nome: string }[]); });
+    listarSoldadores().then(r => { if (r.success) setSoldadoresCadastro(r.data as { id: string; nome: string }[]); });
+  }, []);
 
   async function handleAvancar(itemId: string) {
     setAdvancing(itemId);
@@ -163,6 +173,7 @@ export default function FabricacaoPage() {
 
   async function handleSalvarPrestador() {
     if (!prestadorPopup) return;
+    if (prestadorPopup.modo === 'saida' && !prestadorPopup.nome) { alert('Selecione um prestador'); return; }
     await salvarPrestador(
       prestadorPopup.itemId,
       prestadorPopup.nome,
@@ -195,6 +206,7 @@ export default function FabricacaoPage() {
 
   async function handleSalvarSoldador() {
     if (!soldadorPopup) return;
+    if (soldadorPopup.modo === 'saida' && !soldadorPopup.nome) { alert('Selecione um soldador'); return; }
     await salvarSoldador(
       soldadorPopup.itemId,
       soldadorPopup.nome,
@@ -260,7 +272,7 @@ export default function FabricacaoPage() {
   const itensPorEtapa = (etapaKey: string) => itensFiltrados.filter(it => it.etapa_fabricacao === etapaKey);
 
   // Lista de prestadores únicos para o dropdown
-  const prestadoresUnicos = Array.from(new Set(itens.filter(it => it.prestador_nome).map(it => it.prestador_nome))).sort();
+  const prestadoresUnicos = Array.from(new Set([...prestadoresCadastro.map(p => p.nome), ...itens.filter(it => it.prestador_nome).map(it => it.prestador_nome as string)])).sort();
 
   if (loading) {
     return (
@@ -319,13 +331,24 @@ export default function FabricacaoPage() {
               <>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Nome do Soldador *</label>
-                  <input
-                    type="text"
+                  <select
                     value={soldadorPopup.nome}
                     onChange={e => setSoldadorPopup({ ...soldadorPopup, nome: e.target.value })}
-                    placeholder="Ex: João Silva"
                     style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
-                  />
+                  >
+                    <option value="">Selecione um soldador</option>
+                    {soldadorPopup.nome && !soldadoresCadastro.some(x => x.nome === soldadorPopup.nome) && (
+                      <option value={soldadorPopup.nome}>{soldadorPopup.nome}</option>
+                    )}
+                    {soldadoresCadastro.map(x => (
+                      <option key={x.id} value={x.nome}>{x.nome}</option>
+                    ))}
+                  </select>
+                  {soldadoresCadastro.length === 0 && (
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '6px 0 0' }}>
+                      Nenhum soldador cadastrado. Cadastre em Cadastros &gt; Soldadores.
+                    </p>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
@@ -396,13 +419,24 @@ export default function FabricacaoPage() {
               <>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Nome do Prestador *</label>
-                  <input
-                    type="text"
+                  <select
                     value={prestadorPopup.nome}
                     onChange={e => setPrestadorPopup({ ...prestadorPopup, nome: e.target.value })}
-                    placeholder="Ex: João Silva"
                     style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
-                  />
+                  >
+                    <option value="">Selecione um prestador</option>
+                    {prestadorPopup.nome && !prestadoresCadastro.some(x => x.nome === prestadorPopup.nome) && (
+                      <option value={prestadorPopup.nome}>{prestadorPopup.nome}</option>
+                    )}
+                    {prestadoresCadastro.map(x => (
+                      <option key={x.id} value={x.nome}>{x.nome}</option>
+                    ))}
+                  </select>
+                  {prestadoresCadastro.length === 0 && (
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '6px 0 0' }}>
+                      Nenhum prestador cadastrado. Cadastre em Cadastros &gt; Prestadores.
+                    </p>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
@@ -444,77 +478,6 @@ export default function FabricacaoPage() {
               </button>
               <button onClick={handleSalvarPrestador}
                 style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: '#0891b2', color: 'white' }}>
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Soldador */}
-      {soldadorPopup && (
-        <div onClick={() => setSoldadorPopup(null)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ backgroundColor: 'white', borderRadius: '10px', padding: '20px', maxWidth: '340px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
-
-            <h3 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>
-              {soldadorPopup.modo === 'saida' ? '⚡ Saída para Solda' : '📥 Retorno da Solda'}
-            </h3>
-
-            {soldadorPopup.modo === 'saida' && (
-              <>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Nome do Soldador</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={soldadorPopup.nome}
-                    onChange={e => setSoldadorPopup({ ...soldadorPopup, nome: e.target.value })}
-                    placeholder="Ex: João Silva"
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Data de Saída</label>
-                  <input
-                    type="date"
-                    value={soldadorPopup.dataSaida}
-                    onChange={e => setSoldadorPopup({ ...soldadorPopup, dataSaida: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </>
-            )}
-
-            {soldadorPopup.modo === 'retorno' && (
-              <>
-                <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
-                  <p style={{ fontSize: '11px', color: '#475569', margin: '0 0 4px 0' }}>Soldador</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{soldadorPopup.nome}</p>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', margin: '4px 0 0 0' }}>Saiu em {new Date(soldadorPopup.dataSaida).toLocaleDateString('pt-BR')}</p>
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Data de Retorno</label>
-                  <input
-                    type="date"
-                    value={soldadorPopup.dataRetorno}
-                    onChange={e => setSoldadorPopup({ ...soldadorPopup, dataRetorno: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setSoldadorPopup(null)}
-                style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}>
-                Cancelar
-              </button>
-              <button onClick={handleSalvarSoldador}
-                style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', backgroundColor: '#d97706', color: 'white' }}>
                 OK
               </button>
             </div>

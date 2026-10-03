@@ -19,6 +19,7 @@ const menuItems = [
       { href: '/dashboard/cadastros/itens', label: 'Itens' },
       { href: '/dashboard/cadastros/prestadores', label: 'Prestadores' },
       { href: '/dashboard/cadastros/produtos', label: 'Produtos' },
+      { href: '/dashboard/cadastros/soldadores', label: 'Soldadores' },
     ]
   },
 ];
