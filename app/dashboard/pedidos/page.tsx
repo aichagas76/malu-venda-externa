@@ -12,7 +12,9 @@ import {
   listarItensPedido,
   atualizarItemPedido,
   deletarItemPedido,
+  gerarListaCompras,
 } from './actions';
+import { baixarListaComprasPdf, formatarMoeda, formatarQuantidade, UNIDADE_ROTULO, type ListaComprasData } from './compras';
 
 interface Cliente { id: string; nome: string }
 interface Produto { id: string; nome: string; sku: string; categoria: string; banho: string; peso: number; fabricante: string; preco: number }
@@ -47,6 +49,12 @@ export default function PedidosPage() {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>('aberto');
+  const [showCompras, setShowCompras] = useState(false);
+  const [statusCompras, setStatusCompras] = useState<string[]>(['aberto']);
+  const [listaCompras, setListaCompras] = useState<ListaComprasData | null>(null);
+  const [carregandoCompras, setCarregandoCompras] = useState(false);
+  const [erroCompras, setErroCompras] = useState('');
+  const [gerandoPdf, setGerandoPdf] = useState(false);
   const [itensPedido, setItensPedido] = useState<Record<string, ItemPedido[]>>({});
 
   const [editingPedidoId, setEditingPedidoId] = useState<string | null>(null);
@@ -159,6 +167,48 @@ export default function PedidosPage() {
     }
   }
 
+  async function carregarCompras(statuses: string[]) {
+    setCarregandoCompras(true);
+    setErroCompras('');
+    if (statuses.length === 0) {
+      setListaCompras(null);
+      setCarregandoCompras(false);
+      return;
+    }
+    const result = await gerarListaCompras(statuses);
+    if (result.success) setListaCompras(result.data);
+    else {
+      setListaCompras(null);
+      setErroCompras(result.error);
+    }
+    setCarregandoCompras(false);
+  }
+
+  function abrirCompras() {
+    const inicial = ['aberto'];
+    setStatusCompras(inicial);
+    setListaCompras(null);
+    setShowCompras(true);
+    carregarCompras(inicial);
+  }
+
+  function alternarStatusCompras(chave: string) {
+    const novo = statusCompras.includes(chave) ? statusCompras.filter(x => x !== chave) : [...statusCompras, chave];
+    setStatusCompras(novo);
+    carregarCompras(novo);
+  }
+
+  async function handleBaixarPdf() {
+    if (!listaCompras) return;
+    setGerandoPdf(true);
+    try {
+      await baixarListaComprasPdf(listaCompras);
+    } catch {
+      setErroCompras('Não foi possível gerar o PDF. Tente novamente.');
+    }
+    setGerandoPdf(false);
+  }
+
   function handleStartEditItem(item: ItemPedido) {
     setEditingItemId(item.id);
     setEditItemQtd(item.quantidade);
@@ -246,6 +296,14 @@ export default function PedidosPage() {
             ))}
           </div>
         </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={abrirCompras}
+            title="Gerar lista de compras em PDF"
+            style={{ background: 'white', color: '#7c3aed', border: '1px solid #c4b5fd', padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Lista de compras
+          </button>
         <button
           onClick={handleNovaOrder}
           onMouseEnter={() => setHoveredBtn('novo')}
@@ -258,6 +316,7 @@ export default function PedidosPage() {
         >
           + Novo Pedido
         </button>
+        </div>
       </div>
 
       {/* Form - Novo Pedido (compacto, em linha) */}
@@ -557,6 +616,125 @@ export default function PedidosPage() {
           </tbody>
         </table>
       </div>
+
+      {showCompras && (
+        <div onClick={() => !gerandoPdf && setShowCompras(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '22px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px' }}>Lista de compras</h2>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Soma os itens (componentes) de todos os produtos dos pedidos escolhidos, agrupados por fornecedor.
+            </p>
+
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '14px', fontSize: '13px', color: '#334155' }}>
+              <span style={{ fontWeight: '600' }}>Pedidos:</span>
+              {[{ key: 'aberto', label: 'Aberto' }, { key: 'em_fabricacao', label: 'Em Fabricação (itens ainda não concluídos)' }].map(o => (
+                <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={statusCompras.includes(o.key)} onChange={() => alternarStatusCompras(o.key)} />
+                  {o.label}
+                </label>
+              ))}
+            </div>
+
+            {erroCompras && (
+              <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{erroCompras}</div>
+            )}
+
+            {carregandoCompras && <p style={{ fontSize: '13px', color: '#64748b' }}>Calculando...</p>}
+
+            {!carregandoCompras && statusCompras.length === 0 && (
+              <p style={{ fontSize: '13px', color: '#b45309' }}>Selecione ao menos um tipo de pedido.</p>
+            )}
+
+            {!carregandoCompras && listaCompras && (
+              <>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px' }}>
+                  {listaCompras.pedidos.length} pedido(s) considerado(s)
+                  {listaCompras.pedidos.length > 0 && <>: {listaCompras.pedidos.map(p => p.numero).join(', ')}</>}
+                </p>
+
+                {listaCompras.grupos.length === 0 && (
+                  <div style={{ padding: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#475569', marginBottom: '12px' }}>
+                    {listaCompras.pedidos.length === 0
+                      ? 'Nenhum pedido encontrado com os status escolhidos.'
+                      : 'Nenhum item a comprar: os produtos desses pedidos ainda não têm itens vinculados (Cadastros > Produtos > ícone de caixa).'}
+                  </div>
+                )}
+
+                {listaCompras.grupos.map(g => (
+                  <div key={g.fornecedor?.id || 'sem'} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '8px 12px', backgroundColor: g.fornecedor ? '#ecfeff' : '#fffbeb', fontSize: '13px', fontWeight: '700', color: g.fornecedor ? '#0e7490' : '#b45309' }}>
+                      {g.fornecedor ? g.fornecedor.nome : 'Sem fornecedor definido'}
+                      {g.fornecedor && (g.fornecedor.telefone || g.fornecedor.email) && (
+                        <span style={{ fontWeight: '400', color: '#64748b', marginLeft: '10px', fontSize: '12px' }}>
+                          {[g.fornecedor.telefone, g.fornecedor.email].filter(Boolean).join(' | ')}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '480px' }}>
+                        <thead>
+                          <tr style={{ color: '#64748b', textAlign: 'left' }}>
+                            <th style={{ padding: '6px 12px' }}>Item</th>
+                            <th style={{ padding: '6px 8px' }}>Un.</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qtd. a comprar</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right' }}>Valor unit.</th>
+                            <th style={{ padding: '6px 12px', textAlign: 'right' }}>Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {g.itens.map(i => (
+                            <tr key={i.itemId} style={{ borderTop: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '6px 12px', color: '#1e293b' }}>{i.nome}</td>
+                              <td style={{ padding: '6px 8px', color: '#475569' }}>{UNIDADE_ROTULO[i.unidade] || i.unidade}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: '700', color: '#1e293b' }}>{formatarQuantidade(i.quantidade)}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#475569' }}>{formatarMoeda(i.valorUnitario)}</td>
+                              <td style={{ padding: '6px 12px', textAlign: 'right', color: '#475569' }}>{formatarMoeda(i.subtotal)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+                            <td colSpan={4} style={{ padding: '6px 12px', textAlign: 'right', fontWeight: '700', color: '#334155' }}>Total do fornecedor</td>
+                            <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: '700', color: '#334155' }}>{formatarMoeda(g.total)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+
+                {listaCompras.grupos.length > 0 && (
+                  <p style={{ textAlign: 'right', fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: '0 0 12px' }}>
+                    Total geral estimado: {formatarMoeda(listaCompras.total)}
+                  </p>
+                )}
+
+                {listaCompras.produtosSemItens.length > 0 && (
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '12px', color: '#991b1b', marginBottom: '12px' }}>
+                    <b>Atenção:</b> estes produtos estão nos pedidos mas não têm itens vinculados, então não entram na lista:{' '}
+                    {listaCompras.produtosSemItens.map(p => `${p.sku} (${p.quantidade})`).join(', ')}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowCompras(false)} disabled={gerandoPdf}
+                style={{ padding: '10px 18px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                Fechar
+              </button>
+              <button onClick={handleBaixarPdf} disabled={gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0}
+                style={{ padding: '10px 18px', backgroundColor: '#7c3aed', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px',
+                  cursor: gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: gerandoPdf || carregandoCompras || !listaCompras || listaCompras.grupos.length === 0 ? 0.5 : 1 }}>
+                {gerandoPdf ? 'Gerando PDF...' : 'Baixar PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

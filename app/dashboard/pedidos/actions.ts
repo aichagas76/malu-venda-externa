@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import type { ListaComprasData, ComprasFornecedor, ComprasGrupo } from './compras';
 
 const EMPRESA_ID = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -286,4 +287,128 @@ export async function deletarPedido(pedidoId: string) {
 
   revalidatePath('/dashboard/pedidos');
   return { success: true };
+}
+
+function um<T>(v: T | T[] | null | undefined): T | null {
+  if (Array.isArray(v)) return v[0] ?? null;
+  return v ?? null;
+}
+
+export async function gerarListaCompras(statuses: string[]): Promise<{ success: true; data: ListaComprasData } | { success: false; error: string }> {
+  const permitidos = ['aberto', 'em_fabricacao'];
+  const status = (statuses || []).filter(s => permitidos.includes(s));
+  if (status.length === 0) return { success: false, error: 'Selecione ao menos um status de pedido' };
+
+  const supabase = await createClient();
+
+  const { data: pedidos, error: errPedidos } = await supabase
+    .from('pedidos')
+    .select('id, numero_pedido, status, clientes:cliente_id (nome)')
+    .eq('empresa_id', EMPRESA_ID)
+    .in('status', status)
+    .order('numero_pedido');
+  if (errPedidos) return { success: false, error: errPedidos.message };
+
+  const { data: fornecedores, error: errForn } = await supabase
+    .from('fornecedores')
+    .select('id, nome, telefone, email')
+    .eq('empresa_id', EMPRESA_ID)
+    .order('nome');
+  if (errForn) return { success: false, error: errForn.message };
+
+  const fornecedoresCadastrados: ComprasFornecedor[] = (fornecedores || []).map(f => ({
+    id: f.id, nome: f.nome, telefone: f.telefone ?? null, email: f.email ?? null,
+  }));
+
+  const base: ListaComprasData = {
+    geradoEm: new Date().toISOString(),
+    statusIncluidos: status,
+    pedidos: [],
+    grupos: [],
+    produtosSemItens: [],
+    fornecedoresCadastrados,
+    total: 0,
+  };
+
+  if (!pedidos || pedidos.length === 0) return { success: true, data: base };
+
+  const statusDoPedido = new Map(pedidos.map(p => [p.id as string, p.status as string]));
+
+  const { data: linhas, error: errLinhas } = await supabase
+    .from('itens_pedido')
+    .select('pedido_id, produto_id, quantidade, etapa_fabricacao, produtos:produto_id (sku, nome)')
+    .in('pedido_id', pedidos.map(p => p.id));
+  if (errLinhas) return { success: false, error: errLinhas.message };
+
+  // Pedido aberto: tudo ainda precisa ser comprado. Em fabricação: só o que ainda não foi concluído.
+  const consideradas = (linhas || []).filter(l => statusDoPedido.get(l.pedido_id) === 'aberto' || l.etapa_fabricacao !== null);
+
+  const pedidosComLinhas = new Set(consideradas.map(l => l.pedido_id));
+  base.pedidos = pedidos
+    .filter(p => pedidosComLinhas.has(p.id))
+    .map(p => ({ numero: p.numero_pedido, cliente: um(p.clientes as { nome: string } | { nome: string }[] | null)?.nome || '', status: p.status }));
+
+  if (consideradas.length === 0) return { success: true, data: base };
+
+  const qtdPorProduto = new Map<string, { qtd: number; sku: string; nome: string }>();
+  for (const l of consideradas) {
+    const prod = um(l.produtos as { sku: string; nome: string | null } | { sku: string; nome: string | null }[] | null);
+    const atual = qtdPorProduto.get(l.produto_id) || { qtd: 0, sku: prod?.sku || '-', nome: prod?.nome || '' };
+    atual.qtd += l.quantidade;
+    qtdPorProduto.set(l.produto_id, atual);
+  }
+
+  const { data: vinculos, error: errVinc } = await supabase
+    .from('produto_itens')
+    .select('produto_id, quantidade, itens:item_id (id, nome, unidade, valor_unitario, fornecedores:fornecedor_id (id, nome, telefone, email))')
+    .eq('empresa_id', EMPRESA_ID)
+    .in('produto_id', [...qtdPorProduto.keys()]);
+  if (errVinc) return { success: false, error: errVinc.message };
+
+  type ItemRel = { id: string; nome: string; unidade: string; valor_unitario: number; fornecedores: ComprasFornecedor | ComprasFornecedor[] | null };
+  const acumulado = new Map<string, { item: ItemRel; quantidade: number }>();
+  const produtosComItens = new Set<string>();
+
+  for (const v of vinculos || []) {
+    const item = um(v.itens as ItemRel | ItemRel[] | null);
+    if (!item) continue;
+    produtosComItens.add(v.produto_id);
+    const pedida = qtdPorProduto.get(v.produto_id)?.qtd || 0;
+    const atual = acumulado.get(item.id) || { item, quantidade: 0 };
+    atual.quantidade += pedida * Number(v.quantidade);
+    acumulado.set(item.id, atual);
+  }
+
+  base.produtosSemItens = [...qtdPorProduto.entries()]
+    .filter(([id]) => !produtosComItens.has(id))
+    .map(([, p]) => ({ sku: p.sku, nome: p.nome, quantidade: p.qtd }))
+    .sort((a, b) => a.sku.localeCompare(b.sku, 'pt-BR'));
+
+  const grupos = new Map<string, ComprasGrupo>();
+  for (const { item, quantidade } of acumulado.values()) {
+    const forn = um(item.fornecedores);
+    const chave = forn ? forn.id : 'sem-fornecedor';
+    const grupo = grupos.get(chave) || {
+      fornecedor: forn ? { id: forn.id, nome: forn.nome, telefone: forn.telefone ?? null, email: forn.email ?? null } : null,
+      itens: [],
+      total: 0,
+    };
+    const qtd = Number(quantidade.toFixed(4));
+    const valor = Number(item.valor_unitario);
+    const subtotal = Number((qtd * valor).toFixed(4));
+    grupo.itens.push({ itemId: item.id, nome: item.nome, unidade: item.unidade, valorUnitario: valor, quantidade: qtd, subtotal });
+    grupo.total = Number((grupo.total + subtotal).toFixed(4));
+    grupos.set(chave, grupo);
+  }
+
+  base.grupos = [...grupos.values()]
+    .map(g => ({ ...g, itens: g.itens.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
+    .sort((a, b) => {
+      if (!a.fornecedor) return 1;
+      if (!b.fornecedor) return -1;
+      return a.fornecedor.nome.localeCompare(b.fornecedor.nome, 'pt-BR');
+    });
+  base.total = Number(base.grupos.reduce((t, g) => t + g.total, 0).toFixed(4));
+
+  return { success: true, data: base };
 }
