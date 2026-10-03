@@ -42,6 +42,7 @@ export default function ProdutosPage() {
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [itensCatalogo, setItensCatalogo] = useState<{ id: string; nome: string; unidade: string; valor_unitario: number }[]>([]);
   const [itensProduto, setItensProduto] = useState<{ item_id: string; quantidade: string }[]>([]);
+  const [fotoAmpliada, setFotoAmpliada] = useState<{ src: string; alt: string } | null>(null);
   const [filtroCodigo, setFiltroCodigo] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [valoresProdutos, setValoresProdutos] = useState<Record<string, number>>({});
@@ -60,6 +61,13 @@ export default function ProdutosPage() {
   }, []);
 
   useEffect(() => { carregarProdutos(); }, [carregarProdutos]);
+
+  useEffect(() => {
+    if (!fotoAmpliada) return;
+    const fechar = (e: KeyboardEvent) => { if (e.key === 'Escape') setFotoAmpliada(null); };
+    window.addEventListener('keydown', fechar);
+    return () => window.removeEventListener('keydown', fechar);
+  }, [fotoAmpliada]);
 
   const adicionarItem = () => {
     const qtd = parseFloat(novaQtd);
@@ -261,7 +269,13 @@ export default function ProdutosPage() {
                 <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
                     {produto.imagem_url ? (
-                      <img src={produto.imagem_url} alt={produto.nome || 'Foto do produto'} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
+                      <img
+                        src={produto.imagem_url}
+                        alt={produto.nome || 'Foto do produto'}
+                        title="Clique para ampliar"
+                        onClick={() => setFotoAmpliada({ src: produto.imagem_url as string, alt: produto.nome || produto.sku || 'Foto do produto' })}
+                        style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', cursor: 'zoom-in' }}
+                      />
                     ) : (
                       '—'
                     )}
@@ -461,6 +475,18 @@ export default function ProdutosPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {fotoAmpliada && (
+        <div onClick={() => setFotoAmpliada(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', cursor: 'zoom-out' }}>
+          <button type="button" aria-label="Fechar" title="Fechar" onClick={() => setFotoAmpliada(null)}
+            style={{ position: 'absolute', top: '16px', right: '16px', width: '36px', height: '36px', borderRadius: '50%', border: 'none', backgroundColor: 'white', color: '#1e293b', fontSize: '20px', lineHeight: 1, cursor: 'pointer' }}>
+            ×
+          </button>
+          <img src={fotoAmpliada.src} alt={fotoAmpliada.alt} onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '8px', backgroundColor: 'white', cursor: 'default' }} />
         </div>
       )}
 
