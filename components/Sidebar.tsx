@@ -13,7 +13,7 @@ const menuItems = [
     icon: '📋',
     submenu: [
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
-      { href: '/dashboard/cadastros/produtos', label: 'Produtos' },
+      { href: '/dashboard/produtos', label: 'Produtos' },
     ]
   },
 ];
