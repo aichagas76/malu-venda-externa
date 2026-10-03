@@ -14,6 +14,7 @@ const menuItems = [
     icon: '📋',
     submenu: [
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
+      { href: '/dashboard/cadastros/categorias', label: 'Categorias' },
       { href: '/dashboard/cadastros/produtos', label: 'Produtos' },
     ]
   },

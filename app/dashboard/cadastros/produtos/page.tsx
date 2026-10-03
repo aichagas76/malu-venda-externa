@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { listarProdutos, criarProduto, atualizarProduto, deletarProduto } from './actions';
+import { listarCategorias } from '../categorias/actions';
+import { listarProdutos,criarProduto, atualizarProduto, deletarProduto } from './actions';
 
 interface Produto {
   id: string;
@@ -35,9 +36,12 @@ export default function ProdutosPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
+
   const carregarProdutos = useCallback(async () => {
-    const result = await listarProdutos();
+    const [result, cats] = await Promise.all([listarProdutos(), listarCategorias()]);
     if (result.success) setProdutos(result.data as Produto[]);
+    if (cats.success) setCategorias(cats.data as { id: string; nome: string }[]);
     setLoading(false);
   }, []);
 
@@ -278,13 +282,18 @@ export default function ProdutosPage() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Categoria</label>
-                <input
-                  type="text"
+                <select
                   value={formData.categoria}
                   onChange={e => setFormData({ ...formData, categoria: e.target.value })}
-                  placeholder="Categoria do produto"
-                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                />
+                  style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                  <option value="">Selecione uma categoria</option>
+                  {formData.categoria && !categorias.some(c => c.nome === formData.categoria) && (
+                    <option value={formData.categoria}>{formData.categoria}</option>
+                  )}
+                  {categorias.map(c => (
+                    <option key={c.id} value={c.nome}>{c.nome}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
