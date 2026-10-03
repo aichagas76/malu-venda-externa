@@ -193,11 +193,11 @@ export default function ProdutosPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={async (e) => {
+                  onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       const reader = new FileReader();
-                      reader.onloadend = () => {
+                      reader.onload = () => {
                         setFormData({ ...formData, foto: reader.result as string });
                       };
                       reader.readAsDataURL(file);
