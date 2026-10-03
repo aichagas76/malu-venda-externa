@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarProdutos, criarProduto, atualizarProduto, deletarProduto } from './actions';
 
 interface Produto {
@@ -30,6 +30,10 @@ export default function ProdutosPage() {
   const [editando, setEditando] = useState<Produto | null>(null);
   const [formData, setFormData] = useState<FormData>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
+  const [cameraAberta, setCameraAberta] = useState(false);
+  const [erroCamera, setErroCamera] = useState('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const carregarProdutos = useCallback(async () => {
     const result = await listarProdutos();
@@ -56,6 +60,42 @@ export default function ProdutosPage() {
     });
     setShowModal(true);
   };
+
+  const fecharCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setCameraAberta(false);
+  }, []);
+
+  const abrirCamera = async () => {
+    setErroCamera('');
+    setCameraAberta(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;    } catch {
+      setErroCamera('Não foi possível acessar a câmera. Verifique a permissão do navegador.');
+    }
+  };
+
+  const capturarFoto = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const maxW = 800;
+    const escala = Math.min(1, maxW / video.videoWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth * escala;
+    canvas.height = video.videoHeight * escala;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setFormData(prev => ({ ...prev, foto: canvas.toDataURL('image/jpeg', 0.8) }));
+    fecharCamera();
+  };
+
+  useEffect(() => { if (!showModal) fecharCamera(); }, [showModal, fecharCamera]);
+
+  useEffect(() => {
+    if (cameraAberta && videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
+  }, [cameraAberta, erroCamera]);
 
   const handleSalvar = async () => {
     setEnviando(true);
@@ -211,24 +251,30 @@ export default function ProdutosPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: '#64748b', marginBottom: '4px' }}>📷 Tirar foto</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            setFormData({ ...formData, foto: reader.result as string });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
-                    />
+                    <button
+                      type="button"
+                      onClick={abrirCamera}
+                      style={{ width: '100%', padding: '9px', border: '1px solid #0891b2', backgroundColor: '#ecfeff', color: '#0891b2', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', boxSizing: 'border-box' }}>
+                      Abrir câmera
+                    </button>
                   </div>
                 </div>
+                {cameraAberta && (
+                  <div style={{ marginBottom: '8px', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
+                    <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: '6px', backgroundColor: '#000' }} />
+                    {erroCamera && <p style={{ color: '#dc2626', fontSize: '12px', margin: '6px 0 0' }}>{erroCamera}</p>}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <button type="button" onClick={capturarFoto}
+                        style={{ flex: 1, padding: '8px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                        📸 Capturar
+                      </button>
+                      <button type="button" onClick={fecharCamera}
+                        style={{ padding: '8px 14px', backgroundColor: 'white', color: '#374151', border: '1px solid #e2e8f0', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {formData.foto && formData.foto.startsWith('data:') && (
                   <div style={{ marginTop: '8px' }}>
                     <img src={formData.foto} alt="Preview" style={{ maxWidth: '100px', maxHeight: '100px', borderRadius: '4px' }} />
