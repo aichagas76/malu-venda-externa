@@ -311,9 +311,22 @@ export default function ProdutosPage() {
 
   const handleSalvar = async () => {
     setEnviando(true);
+
+    let foto = formData.foto;
+    if (foto.startsWith('data:')) {
+      try {
+        const blob = await (await fetch(foto)).blob();
+        foto = await enviarFoto(blob);
+      } catch (err) {
+        alert(`Não foi possível enviar a foto: ${err instanceof Error ? err.message : 'erro desconhecido'}`);
+        setEnviando(false);
+        return;
+      }
+    }
+
     const result = editando
-      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto)
-      : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, formData.foto);
+      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria, formData.peso, foto)
+      : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, foto);
 
     if (result.success) {
       await carregarProdutos();
