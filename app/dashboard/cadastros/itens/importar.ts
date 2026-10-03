@@ -1,3 +1,7 @@
+import { MAX_LINHAS, normalizar, lerPlanilha, lerNumero } from '@/lib/planilha';
+
+export { lerPlanilha };
+
 export interface LinhaImportacao {
   linha: number;
   nome: string;
@@ -7,15 +11,6 @@ export interface LinhaImportacao {
   erros: string[];
 }
 
-export const MAX_LINHAS = 1000;
-
-const normalizar = (v: unknown) =>
-  String(v ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[.]/g, '')
-    .trim();
 
 const COLUNAS: Record<'nome' | 'unidade' | 'valor' | 'fornecedor', string[]> = {
   nome: ['nome', 'item', 'descricao'],
@@ -29,51 +24,6 @@ const UNIDADES: Record<string, 'metro' | 'peca' | 'servico'> = {
   peca: 'peca', pecas: 'peca', pc: 'peca', pcs: 'peca', pç: 'peca', un: 'peca', und: 'peca', unid: 'peca', unidade: 'peca',
   servico: 'servico', servicos: 'servico', serv: 'servico', srv: 'servico',
 };
-
-function parseCsv(texto: string): string[][] {
-  const primeira = texto.split(/\r?\n/, 1)[0] || '';
-  const delimitador = [';', '\t', ','].sort((a, b) => primeira.split(b).length - primeira.split(a).length)[0];
-  const linhas: string[][] = [];
-  let campo = '';
-  let linha: string[] = [];
-  let aspas = false;
-  for (let i = 0; i < texto.length; i++) {
-    const c = texto[i];
-    if (aspas) {
-      if (c === '"' && texto[i + 1] === '"') { campo += '"'; i++; }
-      else if (c === '"') aspas = false;
-      else campo += c;
-    } else if (c === '"') aspas = true;
-    else if (c === delimitador) { linha.push(campo); campo = ''; }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && texto[i + 1] === '\n') i++;
-      linha.push(campo); campo = '';
-      linhas.push(linha); linha = [];
-    } else campo += c;
-  }
-  if (campo !== '' || linha.length) { linha.push(campo); linhas.push(linha); }
-  return linhas;
-}
-
-export async function lerPlanilha(arquivo: File): Promise<string[][]> {
-  const nome = arquivo.name.toLowerCase();
-  if (nome.endsWith('.csv') || nome.endsWith('.txt')) {
-    const buffer = await arquivo.arrayBuffer();
-    let texto: string;
-    try {
-      texto = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
-    } catch {
-      texto = new TextDecoder('windows-1252').decode(buffer);
-    }
-    return parseCsv(texto.replace(/^﻿/, ''));
-  }
-  if (nome.endsWith('.xlsx')) {
-    const { readSheet } = await import('read-excel-file/browser');
-    const dados = await readSheet(arquivo);
-    return dados.map(linha => linha.map(c => (c === null || c === undefined ? '' : c instanceof Date ? c.toISOString() : String(c))));
-  }
-  throw new Error('Formato não suportado. Envie um arquivo .xlsx ou .csv (se for .xls, abra no Excel e salve como .xlsx).');
-}
 
 function lerValor(bruto: string): number | null {
   let t = bruto.replace(/R\$/gi, '').replace(/\s/g, '');
@@ -121,7 +71,7 @@ export function interpretarPlanilha(dados: string[][]): { linhas: LinhaImportaca
     else if (!unidade) erros.push(`Unidade "${unidadeBruta}" inválida (use Metro, Peça ou Serviço)`);
 
     const valorBruto = pega(idx.valor);
-    const valor = lerValor(valorBruto);
+    const valor = lerNumero(valorBruto);
     if (!valorBruto) erros.push('Valor unitário vazio');
     else if (valor === null) erros.push(`Valor "${valorBruto}" inválido`);
     else if (valor < 0) erros.push('Valor não pode ser negativo');

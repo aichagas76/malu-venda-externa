@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
-import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos } from './actions';
+import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos } from './actions';
+import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, type LinhaProduto } from './importar';
 
 const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
 
@@ -31,6 +32,12 @@ export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImportar, setShowImportar] = useState(false);
+  const [nomeArquivo, setNomeArquivo] = useState('');
+  const [linhasImport, setLinhasImport] = useState<LinhaProduto[]>([]);
+  const [erroImport, setErroImport] = useState('');
+  const [importando, setImportando] = useState(false);
+  const [resultadoImport, setResultadoImport] = useState<{ criados: number; ignorados: number; categoriasCriadas: number } | null>(null);
   const [editando, setEditando] = useState<Produto | null>(null);
   const [formData, setFormData] = useState<FormData>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
@@ -162,6 +169,68 @@ export default function ProdutosPage() {
     if (cameraAberta && videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
   }, [cameraAberta, erroCamera]);
 
+  const abrirImportar = () => {
+    setNomeArquivo('');
+    setLinhasImport([]);
+    setErroImport('');
+    setResultadoImport(null);
+    setShowImportar(true);
+  };
+
+  const handleArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!arquivo) return;
+    setNomeArquivo(arquivo.name);
+    setLinhasImport([]);
+    setErroImport('');
+    try {
+      const dados = await lerPlanilha(arquivo);
+      const { linhas, erro } = interpretarPlanilhaProdutos(dados);
+      if (erro) setErroImport(erro);
+      else setLinhasImport(linhas);
+    } catch (err) {
+      setErroImport(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.');
+    }
+  };
+
+  const codigosExistentes = new Set(produtos.map(pr => (pr.sku || '').trim().toLowerCase()));
+  const categoriasExistentes = new Set(categorias.map(c => c.nome.trim().toLowerCase()));
+
+  const analise = (() => {
+    const vistos = new Set<string>();
+    return linhasImport.map(l => {
+      const chave = l.codigo.trim().toLowerCase();
+      let situacao: 'ok' | 'erro' | 'duplicado' = 'ok';
+      let motivo = '';
+      if (l.erros.length > 0) { situacao = 'erro'; motivo = l.erros.join('; '); }
+      else if (codigosExistentes.has(chave)) { situacao = 'duplicado'; motivo = 'Código já cadastrado (será ignorado)'; }
+      else if (vistos.has(chave)) { situacao = 'duplicado'; motivo = 'Código repetido na planilha (será ignorado)'; }
+      if (situacao === 'ok') vistos.add(chave);
+      const categoriaNova = situacao === 'ok' && !!l.categoria && !categoriasExistentes.has(l.categoria.toLowerCase());
+      return { ...l, situacao, motivo, categoriaNova };
+    });
+  })();
+
+  const validas = analise.filter(l => l.situacao === 'ok');
+  const comErro = analise.filter(l => l.situacao === 'erro').length;
+  const duplicadas = analise.filter(l => l.situacao === 'duplicado').length;
+  const categoriasNovas = Array.from(new Map(validas.filter(l => l.categoriaNova).map(l => [l.categoria.toLowerCase(), l.categoria])).values());
+
+  const handleImportar = async () => {
+    if (validas.length === 0) return;
+    setImportando(true);
+    const result = await importarProdutos(validas.map(l => ({ codigo: l.codigo, nome: l.nome, categoria: l.categoria, peso: l.peso, foto: l.foto })));
+    if (result.success) {
+      setResultadoImport({ criados: result.criados ?? 0, ignorados: result.ignorados ?? 0, categoriasCriadas: result.categoriasCriadas ?? 0 });
+      setLinhasImport([]);
+      await carregarProdutos();
+    } else {
+      setErroImport(result.error || 'Erro ao importar produtos');
+    }
+    setImportando(false);
+  };
+
   const handleSalvar = async () => {
     setEnviando(true);
     const result = editando
@@ -192,6 +261,12 @@ export default function ProdutosPage() {
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Produtos</h1>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          onClick={abrirImportar}
+          style={{ padding: '10px 16px', backgroundColor: 'white', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+          Importar planilha
+        </button>
         <button
           onClick={abrirNovoProduto}
           style={{
@@ -206,6 +281,7 @@ export default function ProdutosPage() {
           }}>
           + Novo Produto
         </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -566,6 +642,107 @@ export default function ProdutosPage() {
                 style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: enviandoItens ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviandoItens ? 0.6 : 1 }}>
                 {enviandoItens ? 'Salvando...' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showImportar && (
+        <div onClick={() => !importando && setShowImportar(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px' }}>Importar produtos por planilha</h2>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Foto</b>, <b>Categoria</b>, <b>Código</b>, <b>Nome</b> e <b>Peso</b> (em gramas).
+              Só o <b>Código</b> é obrigatório. Na coluna <b>Foto</b>, coloque o <b>link</b> da imagem (começando com http); imagens coladas dentro do Excel não são importadas.
+            </p>
+
+            {resultadoImport ? (
+              <div style={{ padding: '14px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', color: '#065f46', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                <b>Importação concluída.</b><br />
+                {resultadoImport.criados} produto(s) criado(s)
+                {resultadoImport.ignorados > 0 && <> · {resultadoImport.ignorados} ignorado(s) por já existirem</>}
+                {resultadoImport.categoriasCriadas > 0 && <> · {resultadoImport.categoriasCriadas} categoria(s) nova(s) cadastrada(s)</>}
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <button type="button" onClick={() => baixarModeloProdutos()}
+                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Baixar modelo (.xlsx)
+                  </button>
+                  <label style={{ padding: '9px 14px', backgroundColor: '#ecfeff', color: '#0891b2', border: '1px solid #0891b2', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Escolher arquivo
+                    <input type="file" accept=".xlsx,.csv,.txt" onChange={handleArquivo} style={{ display: 'none' }} />
+                  </label>
+                  {nomeArquivo && <span style={{ fontSize: '12px', color: '#64748b' }}>{nomeArquivo}</span>}
+                </div>
+
+                {erroImport && (
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
+                    {erroImport}
+                  </div>
+                )}
+
+                {analise.length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '13px', marginBottom: '8px' }}>
+                      <span style={{ color: '#047857', fontWeight: '600' }}>{validas.length} pronto(s) para importar</span>
+                      {duplicadas > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{duplicadas} ignorado(s)</span>}
+                      {comErro > 0 && <span style={{ color: '#b91c1c', fontWeight: '600' }}>{comErro} com erro</span>}
+                    </div>
+                    {categoriasNovas.length > 0 && (
+                      <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 10px' }}>
+                        Categorias novas que serão cadastradas: <b>{categoriasNovas.join(', ')}</b>
+                      </p>
+                    )}
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '300px', overflow: 'auto', marginBottom: '16px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '640px' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Linha</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Foto</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Categoria</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Código</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Nome</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Peso</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b' }}>Situação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analise.map(l => (
+                            <tr key={l.linha} style={{ borderTop: '1px solid #f1f5f9', backgroundColor: l.situacao === 'erro' ? '#fef2f2' : l.situacao === 'duplicado' ? '#fffbeb' : 'transparent' }}>
+                              <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{l.linha}</td>
+                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.foto ? 'Link' : '—'}</td>
+                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.categoria || '—'}{l.categoriaNova ? ' (nova)' : ''}</td>
+                              <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: '600' }}>{l.codigo || '—'}</td>
+                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.nome || '—'}</td>
+                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.peso !== null ? `${l.peso} g` : '—'}</td>
+                              <td style={{ padding: '6px 10px', color: l.situacao === 'ok' ? '#047857' : l.situacao === 'erro' ? '#b91c1c' : '#b45309' }}>
+                                {l.situacao === 'ok' ? 'OK' : l.motivo}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowImportar(false)} disabled={importando}
+                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                {resultadoImport ? 'Fechar' : 'Cancelar'}
+              </button>
+              {!resultadoImport && (
+                <button onClick={handleImportar} disabled={importando || validas.length === 0}
+                  style={{ padding: '10px 20px', backgroundColor: '#0891b2', color: 'white', border: 'none', borderRadius: '6px', cursor: importando || validas.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importando || validas.length === 0 ? 0.5 : 1 }}>
+                  {importando ? 'Importando...' : `Importar ${validas.length} produto(s)`}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -129,3 +129,80 @@ export async function listarValoresProdutos() {
   }
   return { success: true, data: valores };
 }
+
+export async function importarProdutos(
+  linhas: { codigo: string; nome: string; categoria: string; peso: number | null; foto: string }[]
+) {
+  if (!Array.isArray(linhas) || linhas.length === 0) return { success: false, error: 'Nenhum produto para importar' };
+  if (linhas.length > 1000) return { success: false, error: 'Máximo de 1000 produtos por importação' };
+
+  for (let i = 0; i < linhas.length; i++) {
+    const l = linhas[i];
+    const codigo = (l.codigo || '').trim();
+    if (!codigo || codigo.length > 100) return { success: false, error: `Produto ${i + 1}: código inválido` };
+    if (l.peso !== null && (typeof l.peso !== 'number' || !Number.isFinite(l.peso) || l.peso < 0)) {
+      return { success: false, error: `Produto ${i + 1} (${codigo}): peso inválido` };
+    }
+    if (l.foto && !/^https?:\/\/\S+$/i.test(l.foto)) {
+      return { success: false, error: `Produto ${i + 1} (${codigo}): link da foto inválido` };
+    }
+  }
+
+  const supabase = await createClient();
+
+  const { data: existentes, error: errExistentes } = await supabase
+    .from('produtos')
+    .select('sku')
+    .eq('empresa_id', EMPRESA_ID);
+  if (errExistentes) return { success: false, error: errExistentes.message };
+
+  const codigos = new Set((existentes || []).map(p => String(p.sku).trim().toLowerCase()));
+  const novas: typeof linhas = [];
+  let ignorados = 0;
+  for (const l of linhas) {
+    const chave = l.codigo.trim().toLowerCase();
+    if (codigos.has(chave)) { ignorados++; continue; }
+    codigos.add(chave);
+    novas.push(l);
+  }
+
+  if (novas.length === 0) return { success: true, criados: 0, ignorados, categoriasCriadas: 0 };
+
+  const { data: categorias, error: errCat } = await supabase
+    .from('categorias')
+    .select('nome')
+    .eq('empresa_id', EMPRESA_ID);
+  if (errCat) return { success: false, error: errCat.message };
+
+  const nomeCategoria = new Map<string, string>((categorias || []).map(c => [String(c.nome).trim().toLowerCase(), String(c.nome)]));
+
+  const categoriasNovas = new Map<string, string>();
+  for (const l of novas) {
+    const c = (l.categoria || '').trim();
+    if (c && !nomeCategoria.has(c.toLowerCase()) && !categoriasNovas.has(c.toLowerCase())) categoriasNovas.set(c.toLowerCase(), c);
+  }
+
+  if (categoriasNovas.size > 0) {
+    const { error: errCriar } = await supabase
+      .from('categorias')
+      .insert([...categoriasNovas.values()].map(nome => ({ empresa_id: EMPRESA_ID, nome })));
+    if (errCriar) return { success: false, error: errCriar.message };
+    for (const [chave, nome] of categoriasNovas) nomeCategoria.set(chave, nome);
+  }
+
+  const { error: errProdutos } = await supabase.from('produtos').insert(
+    novas.map(l => ({
+      empresa_id: EMPRESA_ID,
+      sku: l.codigo.trim(),
+      nome: (l.nome || '').trim() || null,
+      categoria: (l.categoria || '').trim() ? nomeCategoria.get(l.categoria.trim().toLowerCase()) || null : null,
+      peso: l.peso,
+      imagem_url: (l.foto || '').trim() || null,
+    }))
+  );
+  if (errProdutos) return { success: false, error: errProdutos.message };
+
+  revalidatePath('/dashboard/cadastros/produtos');
+  revalidatePath('/dashboard/cadastros/categorias');
+  return { success: true, criados: novas.length, ignorados, categoriasCriadas: categoriasNovas.size };
+}
