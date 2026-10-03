@@ -86,7 +86,7 @@ export default function Sidebar() {
                   <span style={{ fontSize: '1.25rem', width: '24px', textAlign: 'center' }}>{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
-                <div style={{ paddingLeft: '1rem' }}>
+                <div style={{ paddingLeft: '0.5rem' }}>
                   {item.submenu.map((sub: any) => {
                     const isSubActive = pathname === sub.href;
                     return (
@@ -94,19 +94,22 @@ export default function Sidebar() {
                         key={sub.href}
                         href={sub.href}
                         style={{
-                          display: 'block',
-                          padding: '0.625rem 1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.625rem 1.25rem',
                           borderRadius: '0.5rem',
                           textDecoration: 'none',
                           color: isSubActive ? '#fbbf24' : '#94a3b8',
                           backgroundColor: isSubActive ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                          borderLeft: isSubActive ? '3px solid #fbbf24' : '3px solid transparent',
-                          paddingLeft: isSubActive ? 'calc(1rem - 3px)' : '1rem',
+                          borderLeft: isSubActive ? '4px solid #fbbf24' : '4px solid transparent',
+                          paddingLeft: isSubActive ? 'calc(1.25rem - 4px)' : '1.25rem',
                           fontSize: '0.875rem',
                           fontWeight: isSubActive ? '600' : '500',
                           transition: 'all 0.2s ease',
                         }}
                       >
+                        <span style={{ fontSize: '0.75rem', width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
                         {sub.label}
                       </Link>
                     );
