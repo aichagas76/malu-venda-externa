@@ -83,6 +83,7 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
             return (
               <div key={item.label}>
                 <button
+                  className={`nav-link${isSubmenuActive ? ' ativo' : ''}`}
                   onClick={() => setExpandedMenu(isExpanded ? null : item.label)}
                   style={{
                     display: 'flex',
@@ -113,6 +114,7 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
                         <Link
                           key={sub.href}
                           href={sub.href}
+                          className={`nav-link${isSubActive ? ' ativo' : ''}`}
                           onClick={onFechar}
                           style={{
                             display: 'flex',
@@ -145,6 +147,7 @@ export default function Sidebar({ aberta = false, onFechar }: { aberta?: boolean
             <Link
               key={item.href}
               href={item.href}
+              className={`nav-link${isActive ? ' ativo' : ''}`}
               onClick={onFechar}
               style={{
                 display: 'flex',

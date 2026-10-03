@@ -42,7 +42,8 @@ export default async function DashboardPage() {
           fontSize: '2.25rem',
           fontWeight: '700',
           color: '#1e293b',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
+          letterSpacing: '-0.02em'
         }}>
           👋 Bem-vindo!
         </h1>
@@ -60,6 +61,7 @@ export default async function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.title}
+            className="stat-card"
             style={{
               backgroundColor: 'white',
               borderRadius: '1rem',
@@ -110,11 +112,11 @@ export default async function DashboardPage() {
       </div>
 
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #155e75 100%)',
         borderRadius: '1rem',
         padding: '2rem',
         color: 'white',
-        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+        boxShadow: '0 12px 32px rgba(8, 145, 178, 0.25)'
       }}>
         <h2 style={{
           fontSize: '1.5rem',

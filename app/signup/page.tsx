@@ -29,21 +29,27 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">
+    <div className="auth-page">
+      <div className="auth-wrap">
+        <div className="auth-brand">
+          <img src="/images/logo-malu.jpg" alt="Malu Folhados" className="auth-logo" />
+          <span className="auth-brand-text">Vendas Externa</span>
+        </div>
+      <div className="auth-card">
+        <h1 className="auth-title">
           Criar Conta
         </h1>
+        <p className="auth-sub">Preencha os dados para começar a usar o sistema</p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="auth-error" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="auth-form">
           <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="nome" className="auth-label">
               Nome
             </label>
             <input
@@ -52,12 +58,12 @@ export default function SignupPage() {
               type="text"
               placeholder="Seu Nome"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="auth-input"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="auth-label">
               Email
             </label>
             <input
@@ -66,12 +72,12 @@ export default function SignupPage() {
               type="email"
               placeholder="seu@email.com"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="auth-input"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="auth-label">
               Senha
             </label>
             <input
@@ -80,12 +86,12 @@ export default function SignupPage() {
               type="password"
               placeholder="••••••••"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="auth-input"
             />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="confirmPassword" className="auth-label">
               Confirmar Senha
             </label>
             <input
@@ -94,25 +100,26 @@ export default function SignupPage() {
               type="password"
               placeholder="••••••••"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="auth-input"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition-colors"
+            className="auth-btn"
           >
             {loading ? 'Cadastrando...' : 'Cadastrar'}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="auth-foot">
           Já tem conta?{' '}
-          <Link href="/login" className="text-blue-500 hover:text-blue-700 font-medium">
+          <Link href="/login" className="auth-link">
             Faça login
           </Link>
         </p>
+      </div>
       </div>
     </div>
   );
