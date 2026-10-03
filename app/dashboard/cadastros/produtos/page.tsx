@@ -9,8 +9,8 @@ interface Produto {
   sku?: string;
   categoria?: string;
   peso?: number;
-  foto?: string;
-  data_cadastro?: string;
+  imagem_url?: string;
+  criado_em?: string;
 }
 
 interface FormData {
@@ -56,7 +56,7 @@ export default function ProdutosPage() {
       sku: produto.sku || '',
       categoria: produto.categoria || '',
       peso: produto.peso ? produto.peso.toString() : '',
-      foto: produto.foto || '',
+      foto: produto.imagem_url || '',
     });
     setShowModal(true);
   };
@@ -106,6 +106,8 @@ export default function ProdutosPage() {
     if (result.success) {
       await carregarProdutos();
       setShowModal(false);
+    } else {
+      alert(result.error || 'Erro ao salvar produto');
     }
     setEnviando(false);
   };
@@ -166,8 +168,8 @@ export default function ProdutosPage() {
               produtos.map((produto) => (
                 <tr key={produto.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
-                    {produto.foto ? (
-                      <img src={produto.foto} alt={produto.nome} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
+                    {produto.imagem_url ? (
+                      <img src={produto.imagem_url} alt={produto.nome} style={{ width: '40px', height: '40px', borderRadius: '4px' }} />
                     ) : (
                       '—'
                     )}
@@ -177,36 +179,22 @@ export default function ProdutosPage() {
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#1e293b' }}>{produto.nome}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>{produto.peso ? `${produto.peso} g` : '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#64748b' }}>
-                    {produto.data_cadastro ? new Date(produto.data_cadastro).toLocaleDateString('pt-BR') : '—'}
+                    {produto.criado_em ? new Date(produto.criado_em).toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button
                       onClick={() => abrirEdicao(produto)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#f1f5f9',
-                        color: '#0891b2',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                      Editar
+                      title="Editar"
+                      aria-label="Editar"
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', color: '#0891b2', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                     </button>
                     <button
                       onClick={() => handleDeletar(produto.id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#fef2f2',
-                        color: '#dc2626',
-                        border: '1px solid #fecaca',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                      Deletar
+                      title="Deletar"
+                      aria-label="Deletar"
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                     </button>
                   </td>
                 </tr>
@@ -238,13 +226,19 @@ export default function ProdutosPage() {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            setFormData({ ...formData, foto: reader.result as string });
-                          };
-                          reader.readAsDataURL(file);
-                        }
+                        if (!file) return;
+                        const img = new Image();
+                        const url = URL.createObjectURL(file);
+                        img.onload = () => {
+                          const escala = Math.min(1, 800 / img.width);
+                          const canvas = document.createElement('canvas');
+                          canvas.width = img.width * escala;
+                          canvas.height = img.height * escala;
+                          canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+                          setFormData(prev => ({ ...prev, foto: canvas.toDataURL('image/jpeg', 0.8) }));
+                          URL.revokeObjectURL(url);
+                        };
+                        img.src = url;
                       }}
                       style={{ width: '100%', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
                     />
@@ -294,7 +288,7 @@ export default function ProdutosPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Código (SKU)</label>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Código (SKU) *</label>
                 <input
                   type="text"
                   value={formData.sku}

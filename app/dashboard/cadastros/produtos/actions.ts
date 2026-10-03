@@ -21,17 +21,17 @@ export async function criarProduto(nome: string, sku: string, categoria: string,
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
+  if (!sku.trim()) return { success: false, error: 'Código (SKU) é obrigatório' };
 
   const { data, error } = await supabase
     .from('produtos')
     .insert([{
       empresa_id: EMPRESA_ID,
       nome: nome.trim(),
-      sku: sku.trim() || null,
+      sku: sku.trim(),
       categoria: categoria.trim() || null,
       peso: peso ? parseFloat(peso) : null,
-      foto: foto.trim() || null,
-      data_cadastro: new Date().toISOString(),
+      imagem_url: foto.trim() || null,
     }])
     .select()
     .single();
@@ -45,15 +45,16 @@ export async function atualizarProduto(produtoId: string, nome: string, sku: str
   const supabase = await createClient();
 
   if (!nome.trim()) return { success: false, error: 'Nome é obrigatório' };
+  if (!sku.trim()) return { success: false, error: 'Código (SKU) é obrigatório' };
 
   const { error } = await supabase
     .from('produtos')
     .update({
       nome: nome.trim(),
-      sku: sku.trim() || null,
+      sku: sku.trim(),
       categoria: categoria.trim() || null,
       peso: peso ? parseFloat(peso) : null,
-      foto: foto.trim() || null,
+      imagem_url: foto.trim() || null,
     })
     .eq('id', produtoId)
     .eq('empresa_id', EMPRESA_ID);
