@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import '../styles/globals.css'
+import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: 'Malu Vendas - ASaaS de Vendas',
@@ -16,14 +16,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-gray-50">
-        <div className="flex flex-col min-h-screen">
-          {/* Header/Navbar será adicionado aqui em breve */}
-          <main className="flex-1">
-            {children}
-          </main>
-          {/* Footer será adicionado aqui em breve */}
-        </div>
+      <body style={{ minHeight: '100vh', backgroundColor: '#f8fafc', overflowX: 'hidden' }}>
+        {children}
       </body>
     </html>
   )

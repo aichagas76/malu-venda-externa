@@ -1,0 +1,531 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  listarPedidos,
+  listarClientes,
+  listarProdutosPorTipo,
+  criarPedido,
+  adicionarItensMultiplos,
+  atualizarStatusPedido,
+  deletarPedido,
+  listarItensPedido,
+  atualizarItemPedido,
+  deletarItemPedido,
+} from './actions';
+
+interface Cliente { id: string; nome: string }
+interface Produto { id: string; nome: string; sku: string; categoria: string; banho: string; peso: number; fabricante: string; preco: number }
+interface ItemPedido { id: string; quantidade: number; preco_unitario: number; banho?: string; produtos?: { id: string; nome: string; sku: string; categoria: string } }
+interface Pedido { id: string; numero_pedido: string; data_pedido: string; status: string; valor_total: number; clientes?: { id: string; nome: string } | null }
+
+const TIPOS = ['Anel', 'Brinco', 'Colar', 'Pulseira', 'Pingente', 'Corrente', 'Aliança', 'Conjunto', 'Tornozeleira', 'Piercing', 'Outro'];
+const BANHOS = ['Ouro', 'Prata', 'Diamante'];
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
+  aberto: { label: 'Aberto', bg: '#dbeafe', color: '#1e40af' },
+  em_fabricacao: { label: 'Em Fabricação', bg: '#fef3c7', color: '#92400e' },
+  fechado: { label: 'Fechado', bg: '#d1fae5', color: '#065f46' },
+};
+
+export default function PedidosPage() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [produtosPorTipo, setProdutosPorTipo] = useState<Produto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
+  const [filtroStatus, setFiltroStatus] = useState<string>('aberto');
+  const [itensPedido, setItensPedido] = useState<Record<string, ItemPedido[]>>({});
+
+  const [editingPedidoId, setEditingPedidoId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editItemQtd, setEditItemQtd] = useState(1);
+  const [editItemPreco, setEditItemPreco] = useState(0);
+
+  const [clienteId, setClienteId] = useState('');
+  const [tipo, setTipo] = useState('');
+  const [selectedProdutos, setSelectedProdutos] = useState<string[]>([]);
+  const [banho, setBanho] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
+  const [valorUnitario, setValorUnitario] = useState(0);
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  async function carregarDados() {
+    const [pedidosRes, clientesRes] = await Promise.all([
+      listarPedidos(),
+      listarClientes(),
+    ]);
+    if (pedidosRes.success) setPedidos(pedidosRes.data as Pedido[]);
+    if (clientesRes.success) setClientes(clientesRes.data);
+    setLoading(false);
+  }
+
+  async function handleNovaOrder() {
+    setError('');
+    setClienteId('');
+    setEditingPedidoId(null);
+  }
+
+  async function handleCriarPedido() {
+    if (!clienteId) { setError('Selecione um cliente'); return; }
+    setSaving(true);
+    const result = await criarPedido(clienteId);
+    if (result.success) {
+      setEditingPedidoId(result.data.id);
+      setPedidos([result.data as Pedido, ...pedidos]);
+    } else {
+      setError(result.error || 'Erro ao criar pedido');
+    }
+    setSaving(false);
+  }
+
+  async function handleCarregarProdutosPorTipo(tipoSelecionado: string) {
+    setTipo(tipoSelecionado);
+    setSelectedProdutos([]);
+    if (!tipoSelecionado) {
+      setProdutosPorTipo([]);
+      return;
+    }
+    const result = await listarProdutosPorTipo(tipoSelecionado);
+    if (result.success) setProdutosPorTipo(result.data as Produto[]);
+  }
+
+  async function handleAdicionarItens() {
+    if (!editingPedidoId) { setError('Pedido inválido'); return; }
+    if (selectedProdutos.length === 0) { setError('Selecione pelo menos um produto'); return; }
+    if (!quantidade || quantidade <= 0) { setError('Quantidade inválida'); return; }
+
+    setSaving(true);
+    const result = await adicionarItensMultiplos(editingPedidoId, selectedProdutos, quantidade, valorUnitario, banho || undefined);
+    if (result.success) {
+      carregarItensPedido(editingPedidoId);
+      carregarDados();
+      setTipo('');
+      setSelectedProdutos([]);
+      setBanho('');
+      setQuantidade(1);
+      setValorUnitario(0);
+      setProdutosPorTipo([]);
+    } else {
+      setError(result.error || 'Erro ao adicionar itens');
+    }
+    setSaving(false);
+  }
+
+  async function carregarItensPedido(pedidoId: string) {
+    const result = await listarItensPedido(pedidoId);
+    if (result.success) {
+      setItensPedido({ ...itensPedido, [pedidoId]: result.data });
+    }
+  }
+
+  async function handleExpandirPedido(pedidoId: string) {
+    if (expandedPedido === pedidoId) {
+      setExpandedPedido(null);
+    } else {
+      setExpandedPedido(pedidoId);
+      carregarItensPedido(pedidoId);
+    }
+  }
+
+  async function handleMudarStatus(pedidoId: string, novoStatus: string) {
+    setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, status: novoStatus } : p));
+    await atualizarStatusPedido(pedidoId, novoStatus);
+  }
+
+  async function handleDeletarPedido(pedidoId: string) {
+    if (!confirm('Excluir pedido?')) return;
+    const result = await deletarPedido(pedidoId);
+    if (result.success) {
+      setPedidos(pedidos.filter(p => p.id !== pedidoId));
+      if (editingPedidoId === pedidoId) setEditingPedidoId(null);
+    }
+  }
+
+  function handleStartEditItem(item: ItemPedido) {
+    setEditingItemId(item.id);
+    setEditItemQtd(item.quantidade);
+    setEditItemPreco(item.preco_unitario);
+  }
+
+  async function handleSalvarItem(pedidoId: string) {
+    if (!editingItemId) return;
+    const result = await atualizarItemPedido(editingItemId, pedidoId, editItemQtd, editItemPreco);
+    if (result.success) {
+      setItensPedido(prev => ({
+        ...prev,
+        [pedidoId]: prev[pedidoId].map(it =>
+          it.id === editingItemId ? { ...it, quantidade: editItemQtd, preco_unitario: editItemPreco } : it
+        ),
+      }));
+      setPedidos(prev => prev.map(p => {
+        if (p.id !== pedidoId) return p;
+        const total = (itensPedido[pedidoId] || []).reduce((acc, it) => {
+          const q = it.id === editingItemId ? editItemQtd : it.quantidade;
+          const pr = it.id === editingItemId ? editItemPreco : it.preco_unitario;
+          return acc + q * pr;
+        }, 0);
+        return { ...p, valor_total: total };
+      }));
+      setEditingItemId(null);
+    }
+  }
+
+  async function handleDeletarItem(itemId: string, pedidoId: string) {
+    if (!confirm('Excluir item?')) return;
+    const result = await deletarItemPedido(itemId, pedidoId);
+    if (result.success) {
+      const novosItens = (itensPedido[pedidoId] || []).filter(it => it.id !== itemId);
+      setItensPedido(prev => ({ ...prev, [pedidoId]: novosItens }));
+      const novoTotal = novosItens.reduce((acc, it) => acc + it.quantidade * it.preco_unitario, 0);
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, valor_total: novoTotal } : p));
+    }
+  }
+
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' };
+  const thStyle: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontSize: '10px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const btnSm: React.CSSProperties = { border: 'none', padding: '5px 10px', borderRadius: '5px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s' };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '40vh' }}>
+        <p style={{ fontSize: '14px', color: '#6b7280' }}>Carregando pedidos...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: '1200px', padding: '0 4px' }}>
+      {/* Header compacto */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '7px', background: 'linear-gradient(135deg, #8b5cf6, #d946ef)', color: 'white', fontSize: '14px' }}>📋</span>
+          <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Pedidos</h1>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>({pedidos.filter(p => filtroStatus === 'todos' || p.status === filtroStatus).length})</span>
+          {/* Filtros de status */}
+          <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+            {([
+              { key: 'todos',        label: 'Todos',          bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+              { key: 'aberto',       label: 'Aberto',         bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+              { key: 'em_fabricacao',label: 'Em Fabricação',  bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
+              { key: 'fechado',      label: 'Fechado',        bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+            ] as { key: string; label: string; bg: string; color: string; border: string }[]).map(({ key, label, bg, color, border }) => (
+              <button key={key} onClick={() => setFiltroStatus(key)}
+                style={{
+                  padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: filtroStatus === key ? '700' : '500',
+                  cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                  backgroundColor: filtroStatus === key ? bg : 'transparent',
+                  color: filtroStatus === key ? color : '#94a3b8',
+                  borderColor: filtroStatus === key ? border : '#e2e8f0',
+                  boxShadow: filtroStatus === key ? `0 0 0 2px ${border}55` : 'none',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={handleNovaOrder}
+          onMouseEnter={() => setHoveredBtn('novo')}
+          onMouseLeave={() => setHoveredBtn(null)}
+          style={{
+            background: hoveredBtn === 'novo' ? 'linear-gradient(135deg, #7c3aed, #c026d3)' : 'linear-gradient(135deg, #8b5cf6, #d946ef)',
+            color: 'white', border: 'none', padding: '7px 16px', borderRadius: '7px',
+            fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+          }}
+        >
+          + Novo Pedido
+        </button>
+      </div>
+
+      {/* Form - Novo Pedido (compacto, em linha) */}
+      {editingPedidoId === null && (
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid #8b5cf6' }}>
+          {error && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', padding: '6px 10px', backgroundColor: '#fef2f2', borderRadius: '5px' }}>{error}</div>}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Cliente *</label>
+              <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
+                <option value="">Selecione um cliente</option>
+                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+            <button onClick={handleCriarPedido} disabled={saving}
+              style={{ ...btnSm, backgroundColor: saving ? '#94a3b8' : '#8b5cf6', color: 'white', whiteSpace: 'nowrap', padding: '7px 16px' }}>
+              {saving ? 'Criando...' : 'Criar Pedido'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Form - Adicionar Itens (compacto) */}
+      {editingPedidoId && (
+        <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: '12px 16px', marginBottom: '10px', borderLeft: '3px solid #8b5cf6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Adicionando itens em:</span>
+            <span style={{ backgroundColor: '#f5f3ff', color: '#6d28d9', padding: '3px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
+              {pedidos.find(p => p.id === editingPedidoId)?.numero_pedido || '—'}
+            </span>
+            <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>
+              {pedidos.find(p => p.id === editingPedidoId)?.clientes?.nome || ''}
+            </span>
+          </div>
+          {error && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', padding: '6px 10px', backgroundColor: '#fef2f2', borderRadius: '5px' }}>{error}</div>}
+
+          {/* Linha 1: Tipo */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '8px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Tipo</label>
+              <select value={tipo} onChange={(e) => handleCarregarProdutosPorTipo(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
+                <option value="">Selecione o tipo</option>
+                {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ width: '100px' }}>
+              <label style={labelStyle}>Banho</label>
+              <select value={banho} onChange={(e) => setBanho(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
+                <option value="">—</option>
+                {BANHOS.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div style={{ width: '70px' }}>
+              <label style={labelStyle}>Qtd</label>
+              <input type="number" value={quantidade} onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)} min="1" style={{ ...inputStyle, textAlign: 'center' }} />
+            </div>
+            <div style={{ width: '120px' }}>
+              <label style={labelStyle}>Valor Unit. (R$)</label>
+              <input type="number" value={valorUnitario === 0 ? '' : valorUnitario} onChange={(e) => setValorUnitario(parseFloat(e.target.value) || 0)} min="0" step="0.01" placeholder="0,00" style={{ ...inputStyle, textAlign: 'right' }} />
+            </div>
+          </div>
+
+          {/* Produtos - Multi-select compacto */}
+          {tipo && produtosPorTipo.length > 0 && (
+            <div style={{ marginBottom: '8px', padding: '8px 10px', backgroundColor: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Produtos — {selectedProdutos.length} selecionado(s)
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                {produtosPorTipo.map(p => (
+                  <label key={p.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '4px 8px',
+                    cursor: 'pointer', borderRadius: '5px', border: '1px solid',
+                    borderColor: selectedProdutos.includes(p.id) ? '#8b5cf6' : '#d1d5db',
+                    backgroundColor: selectedProdutos.includes(p.id) ? '#f5f3ff' : 'white',
+                    color: selectedProdutos.includes(p.id) ? '#6d28d9' : '#374151',
+                  }}>
+                    <input type="checkbox" checked={selectedProdutos.includes(p.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedProdutos([...selectedProdutos, p.id]);
+                        else setSelectedProdutos(selectedProdutos.filter(id => id !== p.id));
+                      }}
+                      style={{ width: '13px', height: '13px', cursor: 'pointer' }}
+                    />
+                    <span><strong>{p.sku}</strong>{p.nome ? ` - ${p.nome}` : ''}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+            <button onClick={handleAdicionarItens} disabled={saving}
+              style={{ ...btnSm, backgroundColor: saving ? '#94a3b8' : '#8b5cf6', color: 'white', padding: '6px 14px' }}>
+              {saving ? 'Adicionando...' : 'Adicionar Itens'}
+            </button>
+            <button onClick={() => setEditingPedidoId(null)}
+              style={{ ...btnSm, backgroundColor: '#6b7280', color: 'white', padding: '6px 14px' }}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lista de Pedidos */}
+      <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              <th style={thStyle}>Nº Pedido</th>
+              <th style={thStyle}>Data</th>
+              <th style={thStyle}>Cliente</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Total</th>
+              <th style={thStyle}>Status</th>
+              <th style={{ ...thStyle, textAlign: 'right', width: '110px' }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pedidos.length > 0 ? (
+              pedidos.filter(p => filtroStatus === 'todos' || p.status === filtroStatus).map((p) => (
+                <React.Fragment key={p.id}>
+                  <tr
+                    onMouseEnter={() => setHoveredRow(p.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    style={{ backgroundColor: hoveredRow === p.id ? '#fafafa' : 'white', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.1s' }}
+                  >
+                    <td style={{ padding: '7px 12px', fontSize: '13px', fontWeight: '600', color: '#8b5cf6' }}>
+                      {p.numero_pedido}
+                    </td>
+                    <td style={{ padding: '7px 12px', fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                      {p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}
+                    </td>
+                    <td style={{ padding: '7px 12px', fontSize: '12px', color: '#374151' }}>
+                      {p.clientes?.nome || '—'}
+                    </td>
+                    <td style={{ padding: '7px 12px', fontSize: '13px', fontWeight: '600', color: '#059669', textAlign: 'right' }}>
+                      R$ {p.valor_total.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '7px 12px' }}>
+                      <select value={p.status} onChange={(e) => handleMudarStatus(p.id, e.target.value)}
+                        style={{ padding: '3px 6px', borderRadius: '5px', fontSize: '11px', fontWeight: '600', border: 'none',
+                          backgroundColor: STATUS_CONFIG[p.status]?.bg || '#f3f4f6',
+                          color: STATUS_CONFIG[p.status]?.color || '#374151', cursor: 'pointer' }}>
+                        {Object.entries(STATUS_CONFIG).map(([key, val]) => (
+                          <option key={key} value={key}>{val.label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ padding: '7px 12px' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                        {/* Adicionar Itens */}
+                        <button
+                          onClick={() => setEditingPedidoId(editingPedidoId === p.id ? null : p.id)}
+                          title="Adicionar itens"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '28px', borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: editingPedidoId === p.id ? '#d1fae5' : 'transparent', borderColor: editingPedidoId === p.id ? '#6ee7b7' : '#d1fae5', color: '#059669' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                          </svg>
+                        </button>
+                        {/* Ver / Ocultar Itens */}
+                        <button
+                          onClick={() => handleExpandirPedido(p.id)}
+                          title={expandedPedido === p.id ? 'Ocultar itens' : 'Ver itens'}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '28px', borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: expandedPedido === p.id ? '#e0e7ff' : 'transparent', borderColor: '#e0e7ff', color: '#4f46e5' }}>
+                          {expandedPedido === p.id ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                              <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          )}
+                        </button>
+                        {/* Excluir */}
+                        <button
+                          onClick={() => handleDeletarPedido(p.id)}
+                          title="Excluir pedido"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '28px', borderRadius: '6px', border: '1px solid #fecaca', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: 'transparent', color: '#dc2626' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Itens expandidos compactos */}
+                  {expandedPedido === p.id && itensPedido[p.id] && (
+                    <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                      <td colSpan={6} style={{ padding: '8px 12px' }}>
+                        <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                              <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Tipo</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Ref.</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Banho</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Qtd</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>V.Unit</th>
+                              <th style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Subtotal</th>
+                              <th style={{ padding: '4px 8px', width: '60px' }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {itensPedido[p.id].map((item, idx) => {
+                              const editing = editingItemId === item.id;
+                              return (
+                                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: editing ? '#fefce8' : 'transparent' }}>
+                                  <td style={{ padding: '4px 8px', color: '#374151' }}>{item.produtos?.categoria || '—'}</td>
+                                  <td style={{ padding: '4px 8px', fontWeight: '600', color: '#6366f1' }}>{item.produtos?.sku || '—'}</td>
+                                  <td style={{ padding: '4px 8px', color: '#374151' }}>{item.banho || '—'}</td>
+                                  <td style={{ padding: '4px 8px', textAlign: 'center', color: '#374151' }}>
+                                    {editing ? (
+                                      <input type="number" value={editItemQtd} min="1"
+                                        onChange={e => setEditItemQtd(parseInt(e.target.value) || 1)}
+                                        style={{ width: '50px', padding: '2px 4px', border: '1px solid #d97706', borderRadius: '4px', textAlign: 'center', fontSize: '12px' }} />
+                                    ) : item.quantidade}
+                                  </td>
+                                  <td style={{ padding: '4px 8px', textAlign: 'right', color: '#374151' }}>
+                                    {editing ? (
+                                      <input type="number" value={editItemPreco} min="0" step="0.01"
+                                        onChange={e => setEditItemPreco(parseFloat(e.target.value) || 0)}
+                                        style={{ width: '72px', padding: '2px 4px', border: '1px solid #d97706', borderRadius: '4px', textAlign: 'right', fontSize: '12px' }} />
+                                    ) : `R$ ${item.preco_unitario.toFixed(2)}`}
+                                  </td>
+                                  <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600', color: '#059669' }}>
+                                    R$ {(editing ? editItemQtd * editItemPreco : item.preco_unitario * item.quantidade).toFixed(2)}
+                                  </td>
+                                  <td style={{ padding: '4px 8px' }}>
+                                    <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
+                                      {editing ? (
+                                        <>
+                                          <button onClick={() => handleSalvarItem(p.id)} title="Salvar"
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '22px', borderRadius: '4px', border: '1px solid #6ee7b7', backgroundColor: '#d1fae5', color: '#059669', cursor: 'pointer' }}>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                          </button>
+                                          <button onClick={() => setEditingItemId(null)} title="Cancelar"
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '22px', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: 'transparent', color: '#6b7280', cursor: 'pointer' }}>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <button onClick={() => handleStartEditItem(item)} title="Editar item"
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '22px', borderRadius: '4px', border: '1px solid #bfdbfe', backgroundColor: 'transparent', color: '#3b82f6', cursor: 'pointer' }}>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                          </button>
+                                          <button onClick={() => handleDeletarItem(item.id, p.id)} title="Excluir item"
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '22px', borderRadius: '4px', border: '1px solid #fecaca', backgroundColor: 'transparent', color: '#dc2626', cursor: 'pointer' }}>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center' }}>
+                  <div style={{ color: '#94a3b8' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '8px', opacity: 0.5 }}>📋</div>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 2px 0', fontWeight: '500' }}>Nenhum pedido cadastrado</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Clique em &quot;+ Novo Pedido&quot; para começar</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
