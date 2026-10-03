@@ -131,12 +131,8 @@ export default function FabricacaoPage() {
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState<string | null>(null);
   const [filtroCodigo, setFiltroCodigo] = useState('');
-  const [filtroStatusPrestador, setFiltroStatusPrestador] = useState<'todos' | 'na_rua' | 'retornou'>('todos');
-  const [filtroPrestadorNome, setFiltroPrestadorNome] = useState('');
-  const [filtroDataSaidaDe, setFiltroDataSaidaDe] = useState('');
-  const [filtroDataSaidaAte, setFiltroDataSaidaAte] = useState('');
-  const [filtroStatusSoldador, setFiltroStatusSoldador] = useState<'todos' | 'na_solda' | 'retornou_solda'>('todos');
-  const [filtroSoldadorNome, setFiltroSoldadorNome] = useState('');
+  const [filtroEtapa, setFiltroEtapa] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'' | 'prestador' | 'soldador' | 'encartelamento'>('');
   const [fotoPopup, setFotoPopup] = useState<{ url: string; sku: string; nome: string } | null>(null);
   const [editingObsId, setEditingObsId] = useState<string | null>(null);
   const [obsText, setObsText] = useState('');
@@ -306,24 +302,19 @@ export default function FabricacaoPage() {
       return false;
     }
 
-    // Filtro por status do prestador
-    if (filtroStatusPrestador === 'na_rua' && (!it.prestador_nome || it.prestador_data_retorno)) {
-      return false;
-    }
-    if (filtroStatusPrestador === 'retornou' && !it.prestador_data_retorno) {
+    // Filtro por etapa
+    if (filtroEtapa && it.etapa_fabricacao !== filtroEtapa) {
       return false;
     }
 
-    // Filtro por nome do prestador
-    if (filtroPrestadorNome.trim() && !it.prestador_nome?.toLowerCase().includes(filtroPrestadorNome.toLowerCase())) {
+    // Filtro por status (item atualmente fora, aguardando retorno)
+    if (filtroStatus === 'prestador' && (!it.prestador_nome || it.prestador_data_retorno)) {
       return false;
     }
-
-    // Filtro por data de saída
-    if (filtroDataSaidaDe && it.prestador_data_saida && it.prestador_data_saida < filtroDataSaidaDe) {
+    if (filtroStatus === 'soldador' && (!it.soldador_nome || it.soldador_data_retorno)) {
       return false;
     }
-    if (filtroDataSaidaAte && it.prestador_data_saida && it.prestador_data_saida > filtroDataSaidaAte) {
+    if (filtroStatus === 'encartelamento' && (!it.encartelador_nome || it.encartelador_data_retorno)) {
       return false;
     }
 
@@ -331,9 +322,6 @@ export default function FabricacaoPage() {
   });
 
   const itensPorEtapa = (etapaKey: string) => itensFiltrados.filter(it => it.etapa_fabricacao === etapaKey);
-
-  // Lista de prestadores únicos para o dropdown
-  const prestadoresUnicos = Array.from(new Set([...prestadoresCadastro.map(p => p.nome), ...itens.filter(it => it.prestador_nome).map(it => it.prestador_nome as string)])).sort();
 
   if (loading) {
     return (
@@ -642,65 +630,54 @@ export default function FabricacaoPage() {
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        {/* Filtro por código */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative', flex: '1', minWidth: '160px' }}>
-          <svg style={{ color: '#94a3b8', flexShrink: 0 }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Código..."
-            value={filtroCodigo}
-            onChange={e => setFiltroCodigo(e.target.value)}
-            style={{ flex: 1, padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white' }}
-          />
-          {filtroCodigo && (
-            <button onClick={() => setFiltroCodigo('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', flexShrink: 0 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '10px', marginBottom: '12px', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <div style={{ width: '120px' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Código</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Código..."
+              value={filtroCodigo}
+              onChange={e => setFiltroCodigo(e.target.value)}
+              style={{ width: '100%', padding: '5px 22px 5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' }}
+            />
+            {filtroCodigo && (
+              <button onClick={() => setFiltroCodigo('')} aria-label="Limpar código"
+                style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', display: 'flex' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Filtro Status Prestador */}
-        <select value={filtroStatusPrestador} onChange={e => setFiltroStatusPrestador(e.target.value as 'todos' | 'na_rua' | 'retornou')}
-          style={{ padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer' }}>
-          <option value="todos">Status: Todos</option>
-          <option value="na_rua">🛣️ Na rua</option>
-          <option value="retornou">✓ Retornou</option>
-        </select>
-
-        {/* Filtro Prestador */}
-        {prestadoresUnicos.length > 0 && (
-          <select value={filtroPrestadorNome} onChange={e => setFiltroPrestadorNome(e.target.value)}
-            style={{ padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer' }}>
-            <option value="">Prestador: Todos</option>
-            {prestadoresUnicos.map(p => (
-              <option key={p} value={p}>{p}</option>
+        <div style={{ minWidth: '150px' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Etapa</label>
+          <select value={filtroEtapa} onChange={e => setFiltroEtapa(e.target.value)}
+            style={{ width: '100%', padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <option value="">Todas as etapas</option>
+            {ETAPAS.map(e => (
+              <option key={e.key} value={e.key}>{e.label}</option>
             ))}
           </select>
-        )}
+        </div>
 
-        {/* Filtro Data De */}
-        <input type="date" value={filtroDataSaidaDe} onChange={e => setFiltroDataSaidaDe(e.target.value)}
-          style={{ padding: '5px 6px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white' }} title="Data saída de:" />
+        <div style={{ minWidth: '160px' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Status</label>
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as '' | 'prestador' | 'soldador' | 'encartelamento')}
+            style={{ width: '100%', padding: '5px 8px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <option value="">Todos os status</option>
+            <option value="prestador">No prestador</option>
+            <option value="soldador">No soldador</option>
+            <option value="encartelamento">No encartelamento</option>
+          </select>
+        </div>
 
-        {/* Filtro Data Até */}
-        <input type="date" value={filtroDataSaidaAte} onChange={e => setFiltroDataSaidaAte(e.target.value)}
-          style={{ padding: '5px 6px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '5px', outline: 'none', backgroundColor: 'white' }} title="Data saída até:" />
-
-        {/* Botão Limpar Filtros */}
-        {(filtroCodigo || filtroStatusPrestador !== 'todos' || filtroPrestadorNome || filtroDataSaidaDe || filtroDataSaidaAte) && (
-          <button onClick={() => {
-            setFiltroCodigo('');
-            setFiltroStatusPrestador('todos');
-            setFiltroPrestadorNome('');
-            setFiltroDataSaidaDe('');
-            setFiltroDataSaidaAte('');
-          }} style={{ padding: '5px 10px', fontSize: '11px', border: '1px solid #94a3b8', borderRadius: '5px', backgroundColor: 'white', color: '#94a3b8', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}>
-            Limpar
+        {(filtroCodigo || filtroEtapa || filtroStatus) && (
+          <button onClick={() => { setFiltroCodigo(''); setFiltroEtapa(''); setFiltroStatus(''); }}
+            style={{ padding: '5px 10px', fontSize: '11px', border: '1px solid #94a3b8', borderRadius: '5px', backgroundColor: 'white', color: '#64748b', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}>
+            Limpar filtros
           </button>
         )}
       </div>
@@ -713,7 +690,7 @@ export default function FabricacaoPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', alignItems: 'flex-start' }}>
-          {ETAPAS.map(etapa => {
+          {ETAPAS.filter(e => !filtroEtapa || e.key === filtroEtapa).map(etapa => {
             const colItens = itensPorEtapa(etapa.key);
             const grupos = agruparPorProduto(colItens);
             const etapaIdx = ETAPAS.findIndex(e => e.key === etapa.key);
