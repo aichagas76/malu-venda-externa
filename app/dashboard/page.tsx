@@ -1,5 +1,46 @@
 import { Users, Package, ShoppingCart, Rocket } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import FaturamentoMensal, { type MesFaturamento } from '@/components/FaturamentoMensal';
+
+const MESES_NO_GRAFICO = 12;
+const FUSO = 'America/Sao_Paulo';
+
+function chaveMes(data: Date) {
+  const partes = new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit' }).formatToParts(data);
+  return `${partes.find(p => p.type === 'year')?.value}-${partes.find(p => p.type === 'month')?.value}`;
+}
+
+// Faturamento = pedidos que já saíram de "aberto", somados pelo mês do pedido.
+async function faturamentoMensal(supabase: Awaited<ReturnType<typeof createClient>>): Promise<MesFaturamento[]> {
+  const [ano, mes] = chaveMes(new Date()).split('-').map(Number);
+  const meses: MesFaturamento[] = Array.from({ length: MESES_NO_GRAFICO }, (_, i) => {
+    const d = new Date(Date.UTC(ano, mes - 1 - (MESES_NO_GRAFICO - 1 - i), 15));
+    const label = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', month: 'short', year: '2-digit' }).format(d).replace('.', '').replace(' de ', '/');
+    return { chave: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, label, total: 0, pedidos: 0 };
+  });
+  const porChave = new Map(meses.map(m => [m.chave, m]));
+  const inicio = new Date(Date.UTC(ano, mes - 1 - (MESES_NO_GRAFICO - 1), 1) - 24 * 3600 * 1000).toISOString();
+
+  // O Supabase devolve no máximo 1000 linhas por consulta: busca em blocos.
+  for (let de = 0; ; de += 1000) {
+    const { data } = await supabase
+      .from('pedidos')
+      .select('data_pedido, valor_total')
+      .neq('status', 'aberto')
+      .gte('data_pedido', inicio)
+      .order('id')
+      .range(de, de + 999);
+    for (const p of data || []) {
+      const m = porChave.get(chaveMes(new Date(p.data_pedido)));
+      if (m) {
+        m.total += Number(p.valor_total) || 0;
+        m.pedidos += 1;
+      }
+    }
+    if (!data || data.length < 1000) break;
+  }
+  return meses;
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -14,6 +55,8 @@ export default async function DashboardPage() {
     supabase.from('produtos').select('id', { count: 'exact' }),
     supabase.from('pedidos').select('id', { count: 'exact' }),
   ]);
+
+  const faturamento = await faturamentoMensal(supabase);
 
   const stats = [
     {
@@ -108,6 +151,8 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <FaturamentoMensal meses={faturamento} />
 
       <div style={{
         background: 'var(--marca)',
