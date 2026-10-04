@@ -12,15 +12,17 @@ export interface LinhaProduto {
   categoria: string;
   codigo: string;
   nome: string;
+  fabricante: string;
   peso: number | null;
   erros: string[];
 }
 
-const COLUNAS: Record<'foto' | 'categoria' | 'codigo' | 'nome' | 'peso', string[]> = {
+const COLUNAS: Record<'foto' | 'categoria' | 'codigo' | 'nome' | 'fabricante' | 'peso', string[]> = {
   foto: ['foto', 'imagem', 'link da foto', 'link foto', 'url', 'url da foto', 'link'],
   categoria: ['categoria', 'tipo'],
   codigo: ['codigo', 'codigo sku', 'codigo (sku)', 'sku', 'cod', 'ref', 'referencia'],
   nome: ['nome', 'descricao', 'produto'],
+  fabricante: ['fabricante', 'marca', 'fornecedor'],
   peso: ['peso', 'peso g', 'peso (g)', 'peso em gramas', 'gramas'],
 };
 
@@ -47,13 +49,14 @@ export function interpretarPlanilhaProdutos(dados: string[][]): { linhas: LinhaP
     categoria: indice('categoria'),
     codigo: indice('codigo'),
     nome: indice('nome'),
+    fabricante: indice('fabricante'),
     peso: indice('peso'),
   };
 
   if (idx.codigo === -1) {
     return {
       linhas: [],
-      erro: 'A primeira linha deve ter os títulos das colunas: Foto, Categoria, Código, Nome e Peso. Não encontrei a coluna Código.',
+      erro: 'A primeira linha deve ter os títulos das colunas: Foto, Categoria, Código, Nome, Fabricante e Peso. Não encontrei a coluna Código.',
     };
   }
 
@@ -71,6 +74,9 @@ export function interpretarPlanilhaProdutos(dados: string[][]): { linhas: LinhaP
 
     const nome = pega(idx.nome);
     if (nome.length > 255) erros.push('Nome com mais de 255 caracteres');
+
+    const fabricante = pega(idx.fabricante);
+    if (fabricante.length > 200) erros.push('Fabricante com mais de 200 caracteres');
 
     const categoria = pega(idx.categoria);
     if (categoria.length > 100) erros.push('Categoria com mais de 100 caracteres');
@@ -98,7 +104,7 @@ export function interpretarPlanilhaProdutos(dados: string[][]): { linhas: LinhaP
       }
     }
 
-    return { linha: numero, foto, fotoTipo, arquivo, categoria, codigo, nome, peso, erros };
+    return { linha: numero, foto, fotoTipo, arquivo, categoria, codigo, nome, fabricante, peso, erros };
   });
 
   return { linhas };
@@ -180,9 +186,9 @@ export async function baixarModeloProdutos() {
   const { default: writeExcelFile } = await import('write-excel-file/browser');
   const titulo = (value: string) => ({ value, fontWeight: 'bold' as const });
   await writeExcelFile([
-    [titulo('Foto'), titulo('Categoria'), titulo('Código'), titulo('Nome'), titulo('Peso')],
-    ['Produto_Images/an-001.jpg', 'Anel', 'AN-001', 'Anel solitário', 3.5],
-    ['https://exemplo.com/fotos/br-001.jpg', 'Brinco', 'BR-001', 'Brinco argola', 1.2],
-    ['', 'Colar', 'CO-001', '', ''],
+    [titulo('Foto'), titulo('Categoria'), titulo('Código'), titulo('Nome'), titulo('Fabricante'), titulo('Peso')],
+    ['Produto_Images/an-001.jpg', 'Anel', 'AN-001', 'Anel solitário', 'Fabricante A', 3.5],
+    ['https://exemplo.com/fotos/br-001.jpg', 'Brinco', 'BR-001', 'Brinco argola', 'Fabricante B', 1.2],
+    ['', 'Colar', 'CO-001', '', '', ''],
   ]).toFile('modelo-produtos.xlsx');
 }

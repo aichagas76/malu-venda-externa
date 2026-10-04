@@ -131,7 +131,7 @@ export async function listarValoresProdutos() {
 }
 
 export async function importarProdutos(
-  linhas: { codigo: string; nome: string; categoria: string; peso: number | null; foto: string }[]
+  linhas: { codigo: string; nome: string; categoria: string; fabricante: string; peso: number | null; foto: string }[]
 ) {
   if (!Array.isArray(linhas) || linhas.length === 0) return { success: false, error: 'Nenhum produto para importar' };
   if (linhas.length > 1000) return { success: false, error: 'Máximo de 1000 produtos por importação' };
@@ -196,6 +196,7 @@ export async function importarProdutos(
       sku: l.codigo.trim(),
       nome: (l.nome || '').trim() || null,
       categoria: (l.categoria || '').trim() ? nomeCategoria.get(l.categoria.trim().toLowerCase()) || null : null,
+      fabricante: (l.fabricante || '').trim() || null,
       peso: l.peso,
       imagem_url: (l.foto || '').trim() || null,
     }))

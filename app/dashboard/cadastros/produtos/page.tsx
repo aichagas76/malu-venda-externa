@@ -290,6 +290,7 @@ export default function ProdutosPage() {
       codigo: l.codigo,
       nome: l.nome,
       categoria: l.categoria,
+      fabricante: l.fabricante,
       peso: l.peso,
       foto: l.fotoTipo === 'link' ? l.foto : l.fotoTipo === 'arquivo' ? (urls.get(l.arquivo) || '') : '',
     })));
@@ -770,7 +771,7 @@ export default function ProdutosPage() {
             style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
             <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 6px' }}>Importar produtos por planilha</h2>
             <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
-              Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Foto</b>, <b>Categoria</b>, <b>Código</b>, <b>Nome</b> e <b>Peso</b> (em gramas).
+              Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Foto</b>, <b>Categoria</b>, <b>Código</b>, <b>Nome</b>, <b>Fabricante</b> e <b>Peso</b> (em gramas).
               Só o <b>Código</b> é obrigatório. Na coluna <b>Foto</b>, coloque o <b>link</b> da imagem (http...) ou o <b>nome do arquivo</b> (como no AppSheet: <b>Produto_Images/foto.jpg</b>) e envie as fotos abaixo, em .zip ou soltas.
             </p>
 
@@ -839,6 +840,7 @@ export default function ProdutosPage() {
                             <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Categoria</th>
                             <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Código</th>
                             <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Nome</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Fabricante</th>
                             <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Peso</th>
                             <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Situação</th>
                           </tr>
@@ -851,6 +853,7 @@ export default function ProdutosPage() {
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.categoria || '—'}{l.categoriaNova ? ' (nova)' : ''}</td>
                               <td style={{ padding: '6px 10px', color: 'var(--texto)', fontWeight: '600' }}>{l.codigo || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.nome || '—'}</td>
+                              <td style={{ padding: '6px 10px', color: '#475569' }}>{l.fabricante || '—'}</td>
                               <td style={{ padding: '6px 10px', color: '#475569' }}>{l.peso !== null ? `${l.peso} g` : '—'}</td>
                               <td style={{ padding: '6px 10px', color: l.situacao === 'ok' ? '#047857' : l.situacao === 'erro' ? '#b91c1c' : '#b45309' }}>
                                 {l.situacao === 'ok' ? 'OK' : l.motivo}
