@@ -657,6 +657,7 @@ export default function PedidosPage() {
                         <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                           <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                              <th style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase', width: '48px', whiteSpace: 'nowrap' }}>Nº Item</th>
                               <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Tipo</th>
                               <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Ref.</th>
                               <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: '600', color: '#6b7280', fontSize: '10px', textTransform: 'uppercase' }}>Banho</th>
@@ -672,6 +673,7 @@ export default function PedidosPage() {
                               const editing = editingItemId === item.id;
                               return (
                                 <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: editing ? '#fefce8' : 'transparent' }}>
+                                  <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '700', color: 'var(--texto-suave)' }}>{idx + 1}</td>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>{item.produtos?.categoria || '—'}</td>
                                   <td style={{ padding: '4px 8px', fontWeight: '600', color: 'var(--acao)' }}>{item.produtos?.sku || '—'}</td>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>

@@ -78,7 +78,9 @@ export async function listarItensPedido(pedidoId: string) {
       etapa_fabricacao,
       produtos:produto_id (id, nome, sku, categoria)
     `)
-    .eq('pedido_id', pedidoId);
+    .eq('pedido_id', pedidoId)
+    .order('criado_em', { ascending: true })
+    .order('id', { ascending: true });
 
   if (error) return { success: false, error: error.message, data: [] };
   return { success: true, data: data || [] };
