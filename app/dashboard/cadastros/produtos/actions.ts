@@ -207,13 +207,32 @@ export async function importarProdutos(
     for (const [chave, nome] of categoriasNovas) nomeCategoria.set(chave, nome);
   }
 
+  const { data: fabsExistentes, error: errFab } = await supabase
+    .from('fabricantes')
+    .select('nome')
+    .eq('empresa_id', EMPRESA_ID);
+  if (errFab) return { success: false, error: errFab.message };
+  const nomeFabricante = new Map<string, string>((fabsExistentes || []).map(f => [String(f.nome).trim().toLowerCase(), String(f.nome)]));
+  const fabricantesNovos = new Map<string, string>();
+  for (const l of novas) {
+    const f = (l.fabricante || '').trim();
+    if (f && !nomeFabricante.has(f.toLowerCase()) && !fabricantesNovos.has(f.toLowerCase())) fabricantesNovos.set(f.toLowerCase(), f);
+  }
+  if (fabricantesNovos.size > 0) {
+    const { error: errCriarFab } = await supabase
+      .from('fabricantes')
+      .insert([...fabricantesNovos.values()].map(nome => ({ empresa_id: EMPRESA_ID, nome })));
+    if (errCriarFab) return { success: false, error: errCriarFab.message };
+    for (const [chave, nome] of fabricantesNovos) nomeFabricante.set(chave, nome);
+  }
+
   const { error: errProdutos } = await supabase.from('produtos').insert(
     novas.map(l => ({
       empresa_id: EMPRESA_ID,
       sku: l.codigo.trim(),
       nome: (l.nome || '').trim() || null,
       categoria: (l.categoria || '').trim() ? nomeCategoria.get(l.categoria.trim().toLowerCase()) || null : null,
-      fabricante: (l.fabricante || '').trim() || null,
+      fabricante: (l.fabricante || '').trim() ? nomeFabricante.get(l.fabricante.trim().toLowerCase()) || null : null,
       peso: l.peso,
       imagem_url: (l.foto || '').trim() || null,
     }))

@@ -414,26 +414,16 @@ export async function gerarListaCompras(statuses: string[]): Promise<{ success: 
   return { success: true, data: base };
 }
 
-// Fabricantes terceirizados: tudo que não é a própria MALU (que fabrica na casa).
+// Fabricantes terceirizados: tudo que está no cadastro, menos a própria MALU (que fabrica na casa).
 export async function listarFabricantesTerceiros() {
   const supabase = await createClient();
-  const contagem = new Map<string, number>();
-  for (let inicio = 0; ; inicio += 1000) {
-    const { data, error } = await supabase
-      .from('produtos')
-      .select('fabricante')
-      .eq('empresa_id', EMPRESA_ID)
-      .not('fabricante', 'is', null)
-      .order('id')
-      .range(inicio, inicio + 999);
-    if (error) return { success: false as const, error: error.message, data: [] as string[] };
-    for (const p of data || []) {
-      const nome = String(p.fabricante || '').trim();
-      if (nome && nome.toLowerCase() !== 'malu') contagem.set(nome, (contagem.get(nome) || 0) + 1);
-    }
-    if (!data || data.length < 1000) break;
-  }
-  const nomes = [...contagem.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+  const { data, error } = await supabase
+    .from('fabricantes')
+    .select('nome')
+    .eq('empresa_id', EMPRESA_ID)
+    .order('nome');
+  if (error) return { success: false as const, error: error.message, data: [] as string[] };
+  const nomes = (data || []).map(f => String(f.nome).trim()).filter(n => n && n.toLowerCase() !== 'malu');
   return { success: true as const, data: nomes };
 }
 

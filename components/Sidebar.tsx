@@ -17,6 +17,7 @@ const menuItems = [
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
       { href: '/dashboard/cadastros/categorias', label: 'Categorias' },
       { href: '/dashboard/cadastros/encarteladores', label: 'Encarteladores' },
+      { href: '/dashboard/cadastros/fabricantes', label: 'Fabricantes' },
       { href: '/dashboard/cadastros/fornecedores', label: 'Fornecedores' },
       { href: '/dashboard/cadastros/itens', label: 'Itens' },
       { href: '/dashboard/cadastros/padroes-itens', label: 'Padrão Itens do produto' },

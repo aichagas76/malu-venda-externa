@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { FolderOpen, Camera, ChevronDown } from 'lucide-react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
+import { listarFabricantes } from '../fabricantes/actions';
 import { listarPadroes } from '../padroes-itens/actions';
 import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos, aplicarPadraoProduto } from './actions';
 import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, indexarFotos, reduzirImagem, enviarFoto, type LinhaProduto, type FotosIndexadas } from './importar';
@@ -67,11 +68,13 @@ export default function ProdutosPage() {
   const [novoItemId, setNovoItemId] = useState('');
   const [novaQtd, setNovaQtd] = useState('');
   const [padroes, setPadroes] = useState<{ id: string; nome: string; padroes_itens_linhas: { item_id: string }[] }[]>([]);
+  const [fabricantes, setFabricantes] = useState<{ id: string; nome: string }[]>([]);
   const [produtoPadrao, setProdutoPadrao] = useState<Produto | null>(null);
   const [aplicandoPadrao, setAplicandoPadrao] = useState(false);
 
   const carregarProdutos = useCallback(async () => {
-    const [result, cats, its, vals, pads] = await Promise.all([listarProdutos(), listarCategorias(), listarItens(), listarValoresProdutos(), listarPadroes()]);
+    const [result, cats, its, vals, pads, fabs] = await Promise.all([listarProdutos(), listarCategorias(), listarItens(), listarValoresProdutos(), listarPadroes(), listarFabricantes()]);
+    if (fabs.success) setFabricantes(fabs.data as { id: string; nome: string }[]);
     if (pads.success) setPadroes(pads.data as unknown as typeof padroes);
     if (vals.success) setValoresProdutos(vals.data);
     if (result.success) setProdutos(result.data as Produto[]);
@@ -141,7 +144,8 @@ export default function ProdutosPage() {
 
   const abrirNovoProduto = () => {
     setEditando(null);
-    setFormData(FORM_INICIAL);
+    const malu = fabricantes.find(f => f.nome.trim().toLowerCase() === 'malu');
+    setFormData({ ...FORM_INICIAL, fabricante: malu ? malu.nome : '' });
     setShowModal(true);
   };
 
@@ -658,17 +662,18 @@ export default function ProdutosPage() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Fabricante</label>
-                <input
-                  type="text"
-                  list="lista-fabricantes"
+                <select
                   value={formData.fabricante}
                   onChange={e => setFormData({ ...formData, fabricante: e.target.value })}
-                  placeholder="Ex.: MALU ou o nome do terceiro"
-                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
-                />
-                <datalist id="lista-fabricantes">
-                  {Array.from(new Set(produtos.map(p => (p.fabricante || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })).map(f => <option key={f} value={f} />)}
-                </datalist>
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                  <option value="">Selecione um fabricante</option>
+                  {formData.fabricante && !fabricantes.some(f => f.nome === formData.fabricante) && (
+                    <option value={formData.fabricante}>{formData.fabricante}</option>
+                  )}
+                  {fabricantes.map(f => (
+                    <option key={f.id} value={f.nome}>{f.nome}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
