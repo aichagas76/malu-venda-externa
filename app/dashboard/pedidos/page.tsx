@@ -87,6 +87,8 @@ export default function PedidosPage() {
   const [clienteId, setClienteId] = useState('');
   const [clienteBusca, setClienteBusca] = useState('');
   const [clienteAberto, setClienteAberto] = useState(false);
+  const [prodAberto, setProdAberto] = useState(false);
+  const [prodBusca, setProdBusca] = useState('');
   const [tipo, setTipo] = useState('');
   const [selectedProdutos, setSelectedProdutos] = useState<string[]>([]);
   const [banho, setBanho] = useState('');
@@ -127,12 +129,14 @@ export default function PedidosPage() {
   async function handleCarregarProdutosPorTipo(tipoSelecionado: string) {
     setTipo(tipoSelecionado);
     setSelectedProdutos([]);
+    setProdAberto(false);
+    setProdBusca('');
     if (!tipoSelecionado) {
       setProdutosPorTipo([]);
       return;
     }
     const result = await listarProdutosPorTipo(tipoSelecionado);
-    if (result.success) setProdutosPorTipo(result.data as Produto[]);
+    if (result.success) setProdutosPorTipo([...(result.data as Produto[])].sort((a, b) => (a.sku || '').localeCompare(b.sku || '', 'pt-BR', { numeric: true, sensitivity: 'base' })));
   }
 
   async function handleAdicionarItens() {
@@ -417,34 +421,64 @@ export default function PedidosPage() {
             </div>
           </div>
 
-          {/* Produtos - Multi-select compacto */}
-          {tipo && produtosPorTipo.length > 0 && (
-            <div style={{ marginBottom: '8px', padding: '8px 10px', backgroundColor: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                Produtos — {selectedProdutos.length} selecionado(s)
+          {/* Produtos - dropdown com busca e seleção múltipla */}
+          {tipo && produtosPorTipo.length > 0 && (() => {
+            const termo = prodBusca.trim().toLowerCase();
+            const filtrados = produtosPorTipo.filter(p => !termo || `${p.sku} ${p.nome || ''}`.toLowerCase().includes(termo));
+            const alternar = (id: string) => setSelectedProdutos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+            return (
+              <div style={{ marginBottom: '10px' }}>
+                <label style={labelStyle}>Produtos</label>
+                <button type="button" onClick={() => { setProdAberto(!prodAberto); setProdBusca(''); }}
+                  style={{ ...inputStyle, color: selectedProdutos.length ? '#111827' : 'var(--texto-suave)', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{selectedProdutos.length ? `${selectedProdutos.length} produto(s) selecionado(s)` : `Selecione os produtos (${produtosPorTipo.length} disponíveis)`}</span>
+                  <ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
+                </button>
+                {prodAberto && (
+                  <div style={{ marginTop: '4px', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', backgroundColor: 'white' }}>
+                    <div style={{ padding: '6px', borderBottom: '1px solid var(--borda)' }}>
+                      <input type="text" autoFocus value={prodBusca} onChange={e => setProdBusca(e.target.value)} placeholder="Buscar por código ou nome..." style={{ ...inputStyle, color: '#111827' }} />
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontSize: '11px', fontWeight: '600' }}>
+                        <button type="button" onClick={() => setSelectedProdutos(prev => Array.from(new Set([...prev, ...filtrados.map(p => p.id)])))}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--acao)' }}>Selecionar {termo ? 'filtrados' : 'todos'} ({filtrados.length})</button>
+                        <button type="button" onClick={() => setSelectedProdutos([])}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--texto-suave)' }}>Limpar seleção</button>
+                      </div>
+                    </div>
+                    <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                      {filtrados.map(p => {
+                        const marcado = selectedProdutos.includes(p.id);
+                        return (
+                          <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', fontSize: '13px', cursor: 'pointer', backgroundColor: marcado ? 'var(--ouro-suave)' : 'white', color: 'var(--texto)', borderBottom: '1px solid #f1f5f9' }}>
+                            <input type="checkbox" checked={marcado} onChange={() => alternar(p.id)} style={{ width: '15px', height: '15px', cursor: 'pointer' }} />
+                            <span><strong>{p.sku}</strong>{p.nome ? ` - ${p.nome}` : ''}</span>
+                          </label>
+                        );
+                      })}
+                      {filtrados.length === 0 && <div style={{ padding: '8px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum produto encontrado</div>}
+                    </div>
+                    <div style={{ padding: '6px', borderTop: '1px solid var(--borda)', textAlign: 'right' }}>
+                      <button type="button" onClick={() => setProdAberto(false)} style={{ ...btnSm, backgroundColor: 'var(--acao)', color: 'white' }}>Concluir</button>
+                    </div>
+                  </div>
+                )}
+                {selectedProdutos.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' }}>
+                    {selectedProdutos.map(id => {
+                      const p = produtosPorTipo.find(x => x.id === id);
+                      return (
+                        <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', padding: '2px 4px 2px 8px', borderRadius: '12px', backgroundColor: 'var(--ouro-suave)', color: 'var(--ouro-escuro)' }}>
+                          {p?.sku || '—'}
+                          <button type="button" aria-label={`Remover ${p?.sku || ''}`} onClick={() => alternar(id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: '14px', lineHeight: 1, padding: '0 4px' }}>×</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                {produtosPorTipo.map(p => (
-                  <label key={p.id} style={{
-                    display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '4px 8px',
-                    cursor: 'pointer', borderRadius: '5px', border: '1px solid',
-                    borderColor: selectedProdutos.includes(p.id) ? 'var(--ouro)' : '#d1d5db',
-                    backgroundColor: selectedProdutos.includes(p.id) ? 'var(--ouro-suave)' : 'white',
-                    color: selectedProdutos.includes(p.id) ? 'var(--ouro-escuro)' : '#374151',
-                  }}>
-                    <input type="checkbox" checked={selectedProdutos.includes(p.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedProdutos([...selectedProdutos, p.id]);
-                        else setSelectedProdutos(selectedProdutos.filter(id => id !== p.id));
-                      }}
-                      style={{ width: '13px', height: '13px', cursor: 'pointer' }}
-                    />
-                    <span><strong>{p.sku}</strong>{p.nome ? ` - ${p.nome}` : ''}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
             <button onClick={handleAdicionarItens} disabled={saving}
