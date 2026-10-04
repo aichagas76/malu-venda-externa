@@ -355,7 +355,14 @@ export default function ProdutosPage() {
     <div style={{ padding: '2rem' }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Produtos</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>
+          Produtos
+          <span style={{ marginLeft: '10px', fontSize: '14px', fontWeight: '500', color: 'var(--texto-suave)' }}>
+            {produtosFiltrados.length === produtos.length
+              ? `(${produtos.length.toLocaleString('pt-BR')})`
+              : `(${produtosFiltrados.length.toLocaleString('pt-BR')} de ${produtos.length.toLocaleString('pt-BR')})`}
+          </span>
+        </h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button
           onClick={abrirImportar}

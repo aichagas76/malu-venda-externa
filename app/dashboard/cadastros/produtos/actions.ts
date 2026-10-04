@@ -7,14 +7,23 @@ const EMPRESA_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 export async function listarProdutos() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('produtos')
-    .select('*')
-    .eq('empresa_id', EMPRESA_ID)
-    .order('nome');
+  // O Supabase devolve no máximo 1000 linhas por consulta: busca em blocos.
+  const TAMANHO = 1000;
+  const todos: Record<string, unknown>[] = [];
+  for (let inicio = 0; ; inicio += TAMANHO) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('*')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('nome')
+      .order('id')
+      .range(inicio, inicio + TAMANHO - 1);
 
-  if (error) return { success: false, error: error.message, data: [] };
-  return { success: true, data: data || [] };
+    if (error) return { success: false, error: error.message, data: [] };
+    todos.push(...(data || []));
+    if (!data || data.length < TAMANHO) break;
+  }
+  return { success: true, data: todos };
 }
 
 export async function criarProduto(nome: string, sku: string, categoria: string, peso: string, foto: string) {
@@ -150,13 +159,19 @@ export async function importarProdutos(
 
   const supabase = await createClient();
 
-  const { data: existentes, error: errExistentes } = await supabase
-    .from('produtos')
-    .select('sku')
-    .eq('empresa_id', EMPRESA_ID);
-  if (errExistentes) return { success: false, error: errExistentes.message };
-
-  const codigos = new Set((existentes || []).map(p => String(p.sku).trim().toLowerCase()));
+  // O Supabase devolve no máximo 1000 linhas por consulta: busca todos os códigos em blocos.
+  const codigos = new Set<string>();
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data: bloco, error: errExistentes } = await supabase
+      .from('produtos')
+      .select('sku')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (errExistentes) return { success: false, error: errExistentes.message };
+    (bloco || []).forEach(p => codigos.add(String(p.sku).trim().toLowerCase()));
+    if (!bloco || bloco.length < 1000) break;
+  }
   const novas: typeof linhas = [];
   let ignorados = 0;
   for (const l of linhas) {
