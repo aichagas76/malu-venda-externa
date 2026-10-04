@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ListaComprasData, ComprasFornecedor, ComprasGrupo } from './compras';
+import type { ListaTerceiroData } from './terceiros';
 
 const EMPRESA_ID = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -410,5 +411,78 @@ export async function gerarListaCompras(statuses: string[]): Promise<{ success: 
     });
   base.total = Number(base.grupos.reduce((t, g) => t + g.total, 0).toFixed(4));
 
+  return { success: true, data: base };
+}
+
+// Fabricantes terceirizados: tudo que não é a própria MALU (que fabrica na casa).
+export async function listarFabricantesTerceiros() {
+  const supabase = await createClient();
+  const contagem = new Map<string, number>();
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('fabricante')
+      .eq('empresa_id', EMPRESA_ID)
+      .not('fabricante', 'is', null)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (error) return { success: false as const, error: error.message, data: [] as string[] };
+    for (const p of data || []) {
+      const nome = String(p.fabricante || '').trim();
+      if (nome && nome.toLowerCase() !== 'malu') contagem.set(nome, (contagem.get(nome) || 0) + 1);
+    }
+    if (!data || data.length < 1000) break;
+  }
+  const nomes = [...contagem.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+  return { success: true as const, data: nomes };
+}
+
+export async function gerarListaFabricante(fabricante: string, statuses: string[]): Promise<{ success: true; data: ListaTerceiroData } | { success: false; error: string }> {
+  const permitidos = ['aberto', 'em_fabricacao', 'fechado'];
+  const status = (statuses || []).filter(s => permitidos.includes(s));
+  if (!fabricante || !fabricante.trim()) return { success: false, error: 'Selecione o fabricante' };
+  if (status.length === 0) return { success: false, error: 'Selecione ao menos um status de pedido' };
+
+  const supabase = await createClient();
+
+  const { data: pedidos, error: errPedidos } = await supabase
+    .from('pedidos')
+    .select('id, status')
+    .eq('empresa_id', EMPRESA_ID)
+    .in('status', status);
+  if (errPedidos) return { success: false, error: errPedidos.message };
+
+  const base: ListaTerceiroData = { fabricante: fabricante.trim(), geradoEm: new Date().toISOString(), statusIncluidos: status, pedidos: 0, linhas: [] };
+  if (!pedidos || pedidos.length === 0) return { success: true, data: base };
+
+  const statusDoPedido = new Map(pedidos.map(p => [p.id as string, p.status as string]));
+
+  type Prod = { sku: string; nome: string | null; categoria: string | null; imagem_url: string | null };
+  type Linha = { pedido_id: string; produto_id: string; quantidade: number; etapa_fabricacao: string | null; produtos: Prod | Prod[] | null };
+  const linhas: Linha[] = [];
+  const ids = pedidos.map(p => p.id as string);
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await supabase
+      .from('itens_pedido')
+      .select('pedido_id, produto_id, quantidade, etapa_fabricacao, produtos:produto_id!inner (sku, nome, categoria, imagem_url, fabricante)')
+      .in('pedido_id', ids.slice(i, i + 100))
+      .eq('produtos.fabricante', fabricante.trim());
+    if (error) return { success: false, error: error.message };
+    linhas.push(...((data || []) as unknown as Linha[]));
+  }
+
+  // Mesma regra da lista de compras: em fabricação conta só o que ainda não foi concluído.
+  const consideradas = linhas.filter(l => statusDoPedido.get(l.pedido_id) !== 'em_fabricacao' || l.etapa_fabricacao !== null);
+
+  const porProduto = new Map<string, { sku: string; nome: string; categoria: string; quantidade: number; imagemUrl: string | null }>();
+  for (const l of consideradas) {
+    const prod = um(l.produtos);
+    const atual = porProduto.get(l.produto_id) || { sku: prod?.sku || '-', nome: prod?.nome || '', categoria: prod?.categoria || '', quantidade: 0, imagemUrl: prod?.imagem_url || null };
+    atual.quantidade += l.quantidade;
+    porProduto.set(l.produto_id, atual);
+  }
+
+  base.pedidos = new Set(consideradas.map(l => l.pedido_id)).size;
+  base.linhas = [...porProduto.values()].sort((a, b) => a.sku.localeCompare(b.sku, 'pt-BR', { numeric: true, sensitivity: 'base' }));
   return { success: true, data: base };
 }

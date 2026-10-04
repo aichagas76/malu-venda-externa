@@ -14,9 +14,12 @@ import {
   atualizarItemPedido,
   deletarItemPedido,
   gerarListaCompras,
+  listarFabricantesTerceiros,
+  gerarListaFabricante,
 } from './actions';
 import { listarCategorias } from '../cadastros/categorias/actions';
 import { baixarListaComprasPdf, formatarMoeda, formatarQuantidade, UNIDADE_ROTULO, type ListaComprasData } from './compras';
+import { baixarListaTerceiroPdf, type ListaTerceiroData } from './terceiros';
 
 interface Cliente { id: string; nome: string }
 interface Produto { id: string; nome: string; sku: string; categoria: string; banho: string; peso: number; fabricante: string; preco: number }
@@ -76,6 +79,14 @@ export default function PedidosPage() {
   const [carregandoCompras, setCarregandoCompras] = useState(false);
   const [erroCompras, setErroCompras] = useState('');
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [showTerceiros, setShowTerceiros] = useState(false);
+  const [fabricantes, setFabricantes] = useState<string[]>([]);
+  const [fabricanteSel, setFabricanteSel] = useState('');
+  const [statusTerceiros, setStatusTerceiros] = useState<string[]>(['aberto']);
+  const [listaTerceiros, setListaTerceiros] = useState<ListaTerceiroData | null>(null);
+  const [carregandoTerceiros, setCarregandoTerceiros] = useState(false);
+  const [erroTerceiros, setErroTerceiros] = useState('');
+  const [progressoPdfTerc, setProgressoPdfTerc] = useState('');
   const [itensPedido, setItensPedido] = useState<Record<string, ItemPedido[]>>({});
 
   const [editingPedidoId, setEditingPedidoId] = useState<string | null>(null);
@@ -234,6 +245,54 @@ export default function PedidosPage() {
     setGerandoPdf(false);
   }
 
+  async function carregarTerceiros(fabricante: string, statuses: string[]) {
+    setErroTerceiros('');
+    setListaTerceiros(null);
+    if (!fabricante || statuses.length === 0) return;
+    setCarregandoTerceiros(true);
+    const result = await gerarListaFabricante(fabricante, statuses);
+    if (result.success) setListaTerceiros(result.data);
+    else setErroTerceiros(result.error);
+    setCarregandoTerceiros(false);
+  }
+
+  async function abrirTerceiros() {
+    setStatusTerceiros(['aberto']);
+    setFabricanteSel('');
+    setListaTerceiros(null);
+    setErroTerceiros('');
+    setShowTerceiros(true);
+    if (fabricantes.length === 0) {
+      const res = await listarFabricantesTerceiros();
+      if (res.success) setFabricantes(res.data);
+      else setErroTerceiros(res.error);
+    }
+  }
+
+  function escolherFabricante(nome: string) {
+    setFabricanteSel(nome);
+    carregarTerceiros(nome, statusTerceiros);
+  }
+
+  function alternarStatusTerceiros(chave: string) {
+    const novo = statusTerceiros.includes(chave) ? statusTerceiros.filter(x => x !== chave) : [...statusTerceiros, chave];
+    setStatusTerceiros(novo);
+    carregarTerceiros(fabricanteSel, novo);
+  }
+
+  async function handleBaixarPdfTerceiros() {
+    if (!listaTerceiros) return;
+    setGerandoPdf(true);
+    setErroTerceiros('');
+    try {
+      await baixarListaTerceiroPdf(listaTerceiros, (feitas, total) => setProgressoPdfTerc(`Carregando fotos: ${feitas} de ${total}...`));
+    } catch {
+      setErroTerceiros('Não foi possível gerar o PDF. Tente novamente.');
+    }
+    setProgressoPdfTerc('');
+    setGerandoPdf(false);
+  }
+
   function handleStartEditItem(item: ItemPedido) {
     setEditingItemId(item.id);
     setEditItemQtd(item.quantidade);
@@ -328,6 +387,13 @@ export default function PedidosPage() {
             style={{ background: 'var(--superficie)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '7px 14px', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
           >
             Lista de compras
+          </button>
+          <button
+            onClick={abrirTerceiros}
+            title="Gerar lista de pedidos de um fabricante terceirizado em PDF"
+            style={{ background: 'var(--superficie)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '7px 14px', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Lista por fabricante
           </button>
         </div>
       </div>
@@ -687,6 +753,64 @@ export default function PedidosPage() {
           </tbody>
         </table>
       </div>
+
+      {showTerceiros && (
+        <div onClick={() => !gerandoPdf && setShowTerceiros(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '22px', maxWidth: '520px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 4px' }}>Lista por fabricante</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Gera o PDF com os produtos dos pedidos que precisam ser fabricados por um terceiro, com foto, quantidade e colunas de conferência.
+            </p>
+
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Fabricante *</label>
+            <select value={fabricanteSel} onChange={e => escolherFabricante(e.target.value)} disabled={gerandoPdf}
+              style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', backgroundColor: 'white', marginBottom: '14px', boxSizing: 'border-box' }}>
+              <option value="">Selecione o fabricante</option>
+              {fabricantes.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '14px', fontSize: '13px', color: '#334155' }}>
+              <span style={{ fontWeight: '600' }}>Status do pedido:</span>
+              {[{ key: 'aberto', label: 'Aberto' }, { key: 'em_fabricacao', label: 'Em Fabricação (itens ainda não concluídos)' }, { key: 'fechado', label: 'Fechado' }].map(o => (
+                <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={statusTerceiros.includes(o.key)} disabled={gerandoPdf} onChange={() => alternarStatusTerceiros(o.key)} />
+                  {o.label}
+                </label>
+              ))}
+            </div>
+
+            {erroTerceiros && (
+              <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{erroTerceiros}</div>
+            )}
+            {carregandoTerceiros && <p style={{ fontSize: '13px', color: 'var(--texto-suave)' }}>Calculando...</p>}
+            {!carregandoTerceiros && fabricanteSel && statusTerceiros.length === 0 && (
+              <p style={{ fontSize: '13px', color: '#b45309' }}>Selecione ao menos um status.</p>
+            )}
+            {!carregandoTerceiros && listaTerceiros && (
+              <p style={{ fontSize: '13px', color: listaTerceiros.linhas.length === 0 ? '#b45309' : '#047857', fontWeight: '600', margin: '0 0 14px' }}>
+                {listaTerceiros.linhas.length === 0
+                  ? 'Nenhum produto deste fabricante nos pedidos com esse status.'
+                  : `${listaTerceiros.linhas.length} produto(s) · ${listaTerceiros.linhas.reduce((t, l) => t + l.quantidade, 0).toLocaleString('pt-BR')} peça(s) · ${listaTerceiros.pedidos} pedido(s)`}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowTerceiros(false)} disabled={gerandoPdf}
+                style={{ padding: '10px 18px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                Fechar
+              </button>
+              <button onClick={handleBaixarPdfTerceiros} disabled={gerandoPdf || carregandoTerceiros || !listaTerceiros || listaTerceiros.linhas.length === 0}
+                style={{ padding: '10px 18px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px',
+                  cursor: gerandoPdf || carregandoTerceiros || !listaTerceiros || listaTerceiros.linhas.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: gerandoPdf || carregandoTerceiros || !listaTerceiros || listaTerceiros.linhas.length === 0 ? 0.5 : 1 }}>
+                {gerandoPdf ? (progressoPdfTerc || 'Gerando PDF...') : 'Baixar PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCompras && (
         <div onClick={() => !gerandoPdf && setShowCompras(false)}
