@@ -99,8 +99,8 @@ export async function listarItensProduto(produtoId: string) {
 export async function salvarItensProduto(produtoId: string, itens: { item_id: string; quantidade: number }[]) {
   const supabase = await createClient();
 
-  if (itens.some(i => !i.item_id || !(i.quantidade > 0))) {
-    return { success: false, error: 'Informe uma quantidade maior que zero para cada item' };
+  if (itens.some(i => !i.item_id || !(i.quantidade >= 0))) {
+    return { success: false, error: 'Informe uma quantidade válida (0 ou mais) para cada item' };
   }
 
   if (itens.length > 0) {

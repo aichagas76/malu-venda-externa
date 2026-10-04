@@ -90,7 +90,7 @@ export default function ProdutosPage() {
   const adicionarItem = () => {
     const qtd = parseFloat(novaQtd);
     if (!novoItemId) return alert('Selecione um item');
-    if (!(qtd > 0)) return alert('Informe uma quantidade maior que zero');
+    if (!(qtd >= 0)) return alert('Informe uma quantidade válida (0 ou mais)');
     setItensProduto(prev => [...prev, { item_id: novoItemId, quantidade: novaQtd }]);
     setNovoItemId('');
     setNovaQtd('');

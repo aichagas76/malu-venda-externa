@@ -22,7 +22,7 @@ export async function listarPadroes() {
 function validar(nome: string, linhas: LinhaPadrao[]) {
   if (!nome.trim()) return 'Nome é obrigatório';
   if (linhas.length === 0) return 'Adicione ao menos um item';
-  if (linhas.some(l => !l.item_id || !(l.quantidade > 0))) return 'Informe uma quantidade maior que zero para cada item';
+  if (linhas.some(l => !l.item_id || !(l.quantidade >= 0))) return 'Informe uma quantidade válida (0 ou mais) para cada item';
   return null;
 }
 
