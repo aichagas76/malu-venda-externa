@@ -222,3 +222,35 @@ export async function importarProdutos(
   revalidatePath('/dashboard/cadastros/categorias');
   return { success: true, criados: novas.length, ignorados, categoriasCriadas: categoriasNovas.size };
 }
+
+export async function aplicarPadraoProduto(produtoId: string, padraoId: string) {
+  const supabase = await createClient();
+
+  const { data: linhas, error } = await supabase
+    .from('padroes_itens_linhas')
+    .select('item_id, quantidade')
+    .eq('empresa_id', EMPRESA_ID)
+    .eq('padrao_id', padraoId);
+  if (error) return { success: false, error: error.message };
+  if (!linhas || linhas.length === 0) return { success: false, error: 'Este padrão não tem itens' };
+
+  const { data: existentes, error: errEx } = await supabase
+    .from('produto_itens')
+    .select('item_id')
+    .eq('empresa_id', EMPRESA_ID)
+    .eq('produto_id', produtoId);
+  if (errEx) return { success: false, error: errEx.message };
+
+  const jaTem = new Set((existentes || []).map(e => e.item_id));
+  const novos = linhas.filter(l => !jaTem.has(l.item_id));
+
+  if (novos.length > 0) {
+    const { error: errIns } = await supabase
+      .from('produto_itens')
+      .insert(novos.map(l => ({ empresa_id: EMPRESA_ID, produto_id: produtoId, item_id: l.item_id, quantidade: l.quantidade })));
+    if (errIns) return { success: false, error: errIns.message };
+  }
+
+  revalidatePath('/dashboard/cadastros/produtos');
+  return { success: true, inseridos: novos.length, ignorados: linhas.length - novos.length };
+}

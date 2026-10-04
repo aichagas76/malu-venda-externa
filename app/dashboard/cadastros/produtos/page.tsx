@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { FolderOpen, Camera, ChevronDown } from 'lucide-react';
 import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
-import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos } from './actions';
+import { listarPadroes } from '../padroes-itens/actions';
+import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos, aplicarPadraoProduto } from './actions';
 import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, indexarFotos, reduzirImagem, enviarFoto, type LinhaProduto, type FotosIndexadas } from './importar';
 
 const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
@@ -63,9 +64,13 @@ export default function ProdutosPage() {
   const [enviandoItens, setEnviandoItens] = useState(false);
   const [novoItemId, setNovoItemId] = useState('');
   const [novaQtd, setNovaQtd] = useState('');
+  const [padroes, setPadroes] = useState<{ id: string; nome: string; padroes_itens_linhas: { item_id: string }[] }[]>([]);
+  const [produtoPadrao, setProdutoPadrao] = useState<Produto | null>(null);
+  const [aplicandoPadrao, setAplicandoPadrao] = useState(false);
 
   const carregarProdutos = useCallback(async () => {
-    const [result, cats, its, vals] = await Promise.all([listarProdutos(), listarCategorias(), listarItens(), listarValoresProdutos()]);
+    const [result, cats, its, vals, pads] = await Promise.all([listarProdutos(), listarCategorias(), listarItens(), listarValoresProdutos(), listarPadroes()]);
+    if (pads.success) setPadroes(pads.data as unknown as typeof padroes);
     if (vals.success) setValoresProdutos(vals.data);
     if (result.success) setProdutos(result.data as Produto[]);
     if (cats.success) setCategorias(cats.data as { id: string; nome: string }[]);
@@ -104,6 +109,17 @@ export default function ProdutosPage() {
     listarItensProduto(produto.id).then(res => {
       if (res.success) setItensProduto((res.data as { item_id: string; quantidade: number }[]).map(r => ({ item_id: r.item_id, quantidade: String(r.quantidade) })));
     });
+  };
+
+  const aplicarPadrao = async (padraoId: string) => {
+    if (!produtoPadrao) return;
+    setAplicandoPadrao(true);
+    const res = await aplicarPadraoProduto(produtoPadrao.id, padraoId);
+    setAplicandoPadrao(false);
+    if (!res.success) return alert(res.error || 'Erro ao aplicar padrão');
+    setProdutoPadrao(null);
+    await carregarProdutos();
+    if (res.ignorados) alert(`${res.inseridos} item(ns) inserido(s). ${res.ignorados} já estava(m) no produto e foi(ram) mantido(s).`);
   };
 
   const salvarItens = async () => {
@@ -492,6 +508,13 @@ export default function ProdutosPage() {
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button
+                      onClick={() => setProdutoPadrao(produto)}
+                      title="Inserir padrão de itens"
+                      aria-label="Inserir padrão de itens"
+                      style={{ width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: 'var(--raio-sm)', cursor: 'pointer' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                    </button>
+                    <button
                       onClick={() => abrirItens(produto)}
                       title="Itens do produto"
                       aria-label="Itens do produto"
@@ -687,6 +710,40 @@ export default function ProdutosPage() {
           </button>
           <img src={fotoAmpliada.src} alt={fotoAmpliada.alt} onClick={e => e.stopPropagation()}
             style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '8px', backgroundColor: 'white', cursor: 'default' }} />
+        </div>
+      )}
+
+      {produtoPadrao && (
+        <div onClick={() => !aplicandoPadrao && setProdutoPadrao(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '420px', width: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 4px' }}>Inserir padrão de itens</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 16px' }}>
+              {produtoPadrao.sku}{produtoPadrao.nome ? ` · ${produtoPadrao.nome}` : ''}
+            </p>
+            {padroes.length === 0 ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                Nenhum padrão cadastrado. Cadastre em Cadastros → Padrão Itens do produto.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                {padroes.map(pd => (
+                  <button key={pd.id} type="button" disabled={aplicandoPadrao} onClick={() => aplicarPadrao(pd.id)}
+                    style={{ padding: '12px', textAlign: 'left', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', cursor: aplicandoPadrao ? 'not-allowed' : 'pointer', opacity: aplicandoPadrao ? 0.6 : 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--texto)' }}>{pd.nome}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{pd.padroes_itens_linhas.length} item(ns)</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setProdutoPadrao(null)} disabled={aplicandoPadrao}
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
