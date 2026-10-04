@@ -580,7 +580,11 @@ export default function PedidosPage() {
                   <tr
                     onMouseEnter={() => setHoveredRow(p.id)}
                     onMouseLeave={() => setHoveredRow(null)}
-                    style={{ backgroundColor: hoveredRow === p.id ? '#fafafa' : 'white', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.1s' }}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button, select, a, input, option')) return;
+                      handleExpandirPedido(p.id);
+                    }}
+                    style={{ backgroundColor: hoveredRow === p.id ? '#fafafa' : 'white', borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.1s', cursor: 'pointer' }}
                   >
                     <td style={{ padding: '7px 12px', fontSize: '13px', fontWeight: '600', color: 'var(--acao)' }}>
                       {p.numero_pedido}
