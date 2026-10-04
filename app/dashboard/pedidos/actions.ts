@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ListaComprasData, ComprasFornecedor, ComprasGrupo } from './compras';
 import type { ListaTerceiroData } from './terceiros';
+import type { PedidoImportacao } from './importar';
 
 const EMPRESA_ID = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -29,6 +30,24 @@ export async function listarProdutos() {
 
   if (error) return { success: false, error: error.message, data: [] };
   return { success: true, data: data || [] };
+}
+
+// Todos os códigos (SKU) cadastrados. O Supabase devolve no máximo 1000 linhas por consulta: busca em blocos.
+export async function listarCodigosProdutos() {
+  const supabase = await createClient();
+  const skus: string[] = [];
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('sku')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (error) return { success: false as const, error: error.message, data: [] as string[] };
+    skus.push(...(data || []).map(p => String(p.sku || '')));
+    if (!data || data.length < 1000) break;
+  }
+  return { success: true as const, data: skus };
 }
 
 export async function listarProdutosPorTipo(tipo: string) {
@@ -76,9 +95,11 @@ export async function listarItensPedido(pedidoId: string) {
       subtotal,
       banho,
       etapa_fabricacao,
+      numero_item,
       produtos:produto_id (id, nome, sku, categoria)
     `)
     .eq('pedido_id', pedidoId)
+    .order('numero_item', { ascending: true, nullsFirst: false })
     .order('criado_em', { ascending: true })
     .order('id', { ascending: true });
 
@@ -159,7 +180,17 @@ export async function adicionarItensMultiplos(
 
   const preco = valorUnitario || 0;
 
-  const itensData = produtoIds.map((prodId) => ({
+  const { data: ultimo } = await supabase
+    .from('itens_pedido')
+    .select('numero_item')
+    .eq('pedido_id', pedidoId)
+    .not('numero_item', 'is', null)
+    .order('numero_item', { ascending: false })
+    .limit(1);
+  const primeiroNumero = ((ultimo?.[0]?.numero_item as number | undefined) || 0) + 1;
+
+  const itensData = produtoIds.map((prodId, idx) => ({
+    numero_item: primeiroNumero + idx,
     pedido_id: pedidoId,
     produto_id: prodId,
     quantidade,
@@ -477,4 +508,111 @@ export async function gerarListaFabricante(fabricante: string, statuses: string[
   base.pedidos = new Set(consideradas.map(l => l.pedido_id)).size;
   base.linhas = [...porProduto.values()].sort((a, b) => a.sku.localeCompare(b.sku, 'pt-BR', { numeric: true, sensitivity: 'base' }));
   return { success: true, data: base };
+}
+
+const chaveSku = (v: string) =>
+  String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+// Cria pedidos inteiros (com itens) a partir da planilha. Pedido que já existe é ignorado;
+// se algo falhar na criação dos itens, o pedido é desfeito para não ficar pela metade.
+export async function importarPedidos(pedidos: PedidoImportacao[]) {
+  if (!Array.isArray(pedidos) || pedidos.length === 0) return { success: false as const, error: 'Nenhum pedido para importar' };
+  const totalItens = pedidos.reduce((t, p) => t + (p.itens?.length || 0), 0);
+  if (totalItens > 1500) return { success: false as const, error: 'Muitos itens em um único envio' };
+
+  for (const p of pedidos) {
+    if (!p.numero?.trim() || !p.clienteId) return { success: false as const, error: `Pedido "${p.numero || '?'}" sem número ou cliente` };
+    if (!['aberto', 'em_fabricacao', 'fechado'].includes(p.status)) return { success: false as const, error: 'Status inválido' };
+    if (!p.itens?.length) return { success: false as const, error: `Pedido ${p.numero} sem itens` };
+    for (const i of p.itens) {
+      if (!i.sku?.trim() || !Number.isInteger(i.quantidade) || i.quantidade <= 0 || !Number.isFinite(i.valor) || i.valor < 0) {
+        return { success: false as const, error: `Pedido ${p.numero}: item com código, quantidade ou valor inválido` };
+      }
+    }
+  }
+
+  const supabase = await createClient();
+
+  const produtos = new Map<string, string>();
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('id, sku')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (error) return { success: false as const, error: error.message };
+    (data || []).forEach(pr => produtos.set(chaveSku(String(pr.sku)), pr.id));
+    if (!data || data.length < 1000) break;
+  }
+
+  const numeros = pedidos.map(p => p.numero.trim());
+  const existentes = new Set<string>();
+  {
+    const { data, error } = await supabase
+      .from('pedidos')
+      .select('numero_pedido')
+      .eq('empresa_id', EMPRESA_ID)
+      .in('numero_pedido', numeros);
+    if (error) return { success: false as const, error: error.message };
+    (data || []).forEach(r => existentes.add(String(r.numero_pedido)));
+  }
+
+  const criados: string[] = [];
+  const ignorados: string[] = [];
+  const falhas: { numero: string; motivo: string }[] = [];
+
+  for (const p of pedidos) {
+    const numero = p.numero.trim();
+    if (existentes.has(numero)) { ignorados.push(numero); continue; }
+
+    const semProduto = p.itens.find(i => !produtos.has(chaveSku(i.sku)));
+    if (semProduto) { falhas.push({ numero, motivo: `produto ${semProduto.sku} não cadastrado` }); continue; }
+
+    // Nº Item: usa o da planilha; os que vierem em branco continuam a sequência
+    const usados = p.itens.map(i => i.numeroItem).filter((n): n is number => n !== null && n > 0);
+    let proximo = (usados.length ? Math.max(...usados) : 0) + 1;
+    const datas = p.itens.map(i => i.quando).filter(Boolean) as string[];
+    const dataPedido = datas.length ? datas.sort()[0] : new Date().toISOString();
+    const valorTotal = Number(p.itens.reduce((t, i) => t + i.quantidade * i.valor, 0).toFixed(2));
+
+    const { data: pedido, error: errPedido } = await supabase
+      .from('pedidos')
+      .insert([{
+        empresa_id: EMPRESA_ID,
+        cliente_id: p.clienteId,
+        numero_pedido: numero,
+        data_pedido: dataPedido,
+        status: p.status,
+        valor_total: valorTotal,
+        desconto: 0,
+      }])
+      .select('id')
+      .single();
+    if (errPedido || !pedido) { falhas.push({ numero, motivo: errPedido?.message || 'erro ao criar pedido' }); continue; }
+
+    const linhas = p.itens.map(i => ({
+      pedido_id: pedido.id,
+      produto_id: produtos.get(chaveSku(i.sku)) as string,
+      quantidade: i.quantidade,
+      preco_unitario: i.valor,
+      subtotal: Number((i.quantidade * i.valor).toFixed(2)),
+      banho: i.banho || null,
+      etapa_fabricacao: p.status === 'em_fabricacao' ? 'montagem_inicial' : null,
+      numero_item: i.numeroItem && i.numeroItem > 0 ? i.numeroItem : proximo++,
+      criado_em: i.quando || dataPedido,
+    }));
+
+    const { error: errItens } = await supabase.from('itens_pedido').insert(linhas);
+    if (errItens) {
+      await supabase.from('pedidos').delete().eq('id', pedido.id).eq('empresa_id', EMPRESA_ID);
+      falhas.push({ numero, motivo: errItens.message });
+      continue;
+    }
+    criados.push(numero);
+  }
+
+  revalidatePath('/dashboard/pedidos');
+  revalidatePath('/dashboard/fabricacao');
+  return { success: true as const, criados, ignorados, falhas };
 }

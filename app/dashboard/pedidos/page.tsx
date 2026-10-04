@@ -16,14 +16,17 @@ import {
   gerarListaCompras,
   listarFabricantesTerceiros,
   gerarListaFabricante,
+  listarCodigosProdutos,
+  importarPedidos,
 } from './actions';
 import { listarCategorias } from '../cadastros/categorias/actions';
 import { baixarListaComprasPdf, formatarMoeda, formatarQuantidade, UNIDADE_ROTULO, type ListaComprasData } from './compras';
 import { baixarListaTerceiroPdf, type ListaTerceiroData } from './terceiros';
+import { lerPlanilha, interpretarPlanilhaPedidos, baixarModeloPedidos, chavePedido, chaveSkuTexto, prefixoPedido, type LinhaPedidoImport, type PedidoImportacao } from './importar';
 
 interface Cliente { id: string; nome: string }
 interface Produto { id: string; nome: string; sku: string; categoria: string; banho: string; peso: number; fabricante: string; preco: number }
-interface ItemPedido { id: string; quantidade: number; preco_unitario: number; banho?: string; etapa_fabricacao?: string | null; produtos?: { id: string; nome: string; sku: string; categoria: string } }
+interface ItemPedido { id: string; numero_item?: number | null; quantidade: number; preco_unitario: number; banho?: string; etapa_fabricacao?: string | null; produtos?: { id: string; nome: string; sku: string; categoria: string } }
 interface Pedido { id: string; numero_pedido: string; data_pedido: string; status: string; valor_total: number; clientes?: { id: string; nome: string } | null }
 
 const BANHOS = ['Ouro', 'Prata', 'Diamante'];
@@ -79,6 +82,16 @@ export default function PedidosPage() {
   const [carregandoCompras, setCarregandoCompras] = useState(false);
   const [erroCompras, setErroCompras] = useState('');
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [showImportPed, setShowImportPed] = useState(false);
+  const [nomeArqPed, setNomeArqPed] = useState('');
+  const [linhasPed, setLinhasPed] = useState<LinhaPedidoImport[]>([]);
+  const [erroImpPed, setErroImpPed] = useState('');
+  const [statusImpPed, setStatusImpPed] = useState<'aberto' | 'em_fabricacao' | 'fechado'>('aberto');
+  const [skusImp, setSkusImp] = useState<Set<string> | null>(null);
+  const [mapaClientes, setMapaClientes] = useState<Record<string, string>>({});
+  const [importandoPed, setImportandoPed] = useState(false);
+  const [progressoPed, setProgressoPed] = useState('');
+  const [resultadoPed, setResultadoPed] = useState<{ criados: number; ignorados: number; falhas: { numero: string; motivo: string }[] } | null>(null);
   const [showTerceiros, setShowTerceiros] = useState(false);
   const [fabricantes, setFabricantes] = useState<string[]>([]);
   const [fabricanteSel, setFabricanteSel] = useState('');
@@ -245,6 +258,112 @@ export default function PedidosPage() {
     setGerandoPdf(false);
   }
 
+  async function abrirImportarPedidos() {
+    setNomeArqPed('');
+    setLinhasPed([]);
+    setErroImpPed('');
+    setProgressoPed('');
+    setResultadoPed(null);
+    setStatusImpPed('aberto');
+    setMapaClientes({});
+    setShowImportPed(true);
+    const res = await listarCodigosProdutos();
+    if (res.success) setSkusImp(new Set(res.data.map(sku => chaveSkuTexto(sku))));
+  }
+
+  async function handleArquivoPedidos(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!arquivo) return;
+    setNomeArqPed(arquivo.name);
+    setLinhasPed([]);
+    setErroImpPed('');
+    try {
+      const dados = await lerPlanilha(arquivo);
+      const { linhas, erro } = interpretarPlanilhaPedidos(dados);
+      if (erro) { setErroImpPed(erro); return; }
+      setLinhasPed(linhas);
+      // Sugere o cliente de cada prefixo (JARD - 1 -> JARD) pelos pedidos já existentes ou pelo nome do cliente
+      const sugestao: Record<string, string> = {};
+      for (const prefixo of new Set(linhas.map(l => prefixoPedido(l.pedido)).filter(Boolean))) {
+        const dePedido = pedidos.find(pd => prefixoPedido(pd.numero_pedido) === prefixo && pd.clientes?.id);
+        if (dePedido?.clientes) { sugestao[prefixo] = dePedido.clientes.id; continue; }
+        const porNome = clientes.filter(c => c.nome.replace(/\s+/g, '').toUpperCase().startsWith(prefixo.replace(/\s+/g, '')));
+        if (porNome.length === 1) sugestao[prefixo] = porNome[0].id;
+      }
+      setMapaClientes(sugestao);
+    } catch (err) {
+      setErroImpPed(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.');
+    }
+  }
+
+  const numerosExistentes = new Set(pedidos.map(pd => chavePedido(pd.numero_pedido)));
+  const analisePedidos = (() => {
+    const grupos = new Map<string, LinhaPedidoImport[]>();
+    for (const l of linhasPed) {
+      const chave = l.pedido || `(linha ${l.linha})`;
+      grupos.set(chave, [...(grupos.get(chave) || []), l]);
+    }
+    return [...grupos.entries()].map(([numero, linhas]) => {
+      const motivos: string[] = [];
+      for (const l of linhas) if (l.erros.length > 0) motivos.push(`linha ${l.linha}: ${l.erros.join('; ')}`);
+      const faltando = Array.from(new Set(linhas.filter(l => l.sku && skusImp && !skusImp.has(chaveSkuTexto(l.sku))).map(l => l.sku)));
+      if (faltando.length > 0) motivos.push(`produto(s) não cadastrado(s): ${faltando.join(', ')}`);
+      const existe = numerosExistentes.has(numero);
+      const situacao: 'ok' | 'existe' | 'problema' = existe ? 'existe' : motivos.length > 0 ? 'problema' : 'ok';
+      const total = linhas.reduce((t, l) => t + (l.quantidade || 0) * (l.valor || 0), 0);
+      return { numero, linhas, motivos, situacao, total, prefixo: prefixoPedido(numero) };
+    });
+  })();
+  const pedidosProntos = analisePedidos.filter(a => a.situacao === 'ok');
+  const pedidosExistentes = analisePedidos.filter(a => a.situacao === 'existe');
+  const pedidosComProblema = analisePedidos.filter(a => a.situacao === 'problema');
+  const prefixosProntos = Array.from(new Set(pedidosProntos.map(a => a.prefixo)));
+  const prefixosSemCliente = prefixosProntos.filter(pf => !mapaClientes[pf]);
+  const podeImportarPedidos = pedidosProntos.length > 0 && prefixosSemCliente.length === 0 && !importandoPed && skusImp !== null;
+
+  async function handleImportarPedidos() {
+    if (!podeImportarPedidos) return;
+    setImportandoPed(true);
+    setErroImpPed('');
+    const lotes: PedidoImportacao[][] = [];
+    let atual: PedidoImportacao[] = [];
+    let itensAtual = 0;
+    for (const a of pedidosProntos) {
+      if (itensAtual + a.linhas.length > 1000 && atual.length > 0) { lotes.push(atual); atual = []; itensAtual = 0; }
+      atual.push({
+        numero: a.numero,
+        clienteId: mapaClientes[a.prefixo],
+        status: statusImpPed,
+        itens: a.linhas.map(l => ({ sku: l.sku, numeroItem: l.numeroItem, banho: l.banho, quantidade: l.quantidade as number, valor: l.valor as number, quando: l.quando })),
+      });
+      itensAtual += a.linhas.length;
+    }
+    if (atual.length > 0) lotes.push(atual);
+
+    const criados: string[] = [];
+    const ignorados: string[] = [];
+    const falhas: { numero: string; motivo: string }[] = [];
+    for (let i = 0; i < lotes.length; i++) {
+      setProgressoPed(`Gravando lote ${i + 1} de ${lotes.length}...`);
+      const res = await importarPedidos(lotes[i]);
+      if (!res.success) {
+        setErroImpPed(`${res.error}${criados.length > 0 ? ` (já foram criados ${criados.length} pedido(s) antes do erro)` : ''}`);
+        break;
+      }
+      criados.push(...res.criados);
+      ignorados.push(...res.ignorados);
+      falhas.push(...res.falhas);
+    }
+    setProgressoPed('');
+    if (criados.length > 0 || falhas.length > 0 || ignorados.length > 0) {
+      setResultadoPed({ criados: criados.length, ignorados: ignorados.length, falhas });
+      setLinhasPed([]);
+    }
+    await carregarDados();
+    setImportandoPed(false);
+  }
+
   async function carregarTerceiros(fabricante: string, statuses: string[]) {
     setErroTerceiros('');
     setListaTerceiros(null);
@@ -387,6 +506,13 @@ export default function PedidosPage() {
             style={{ background: 'var(--superficie)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '7px 14px', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
           >
             Lista de compras
+          </button>
+          <button
+            onClick={abrirImportarPedidos}
+            title="Importar pedidos de uma planilha"
+            style={{ background: 'var(--superficie)', color: 'var(--acao)', border: '1px solid var(--borda-forte)', padding: '7px 14px', borderRadius: 'var(--raio-sm)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Importar pedidos
           </button>
           <button
             onClick={abrirTerceiros}
@@ -673,7 +799,7 @@ export default function PedidosPage() {
                               const editing = editingItemId === item.id;
                               return (
                                 <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: editing ? '#fefce8' : 'transparent' }}>
-                                  <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '700', color: 'var(--texto-suave)' }}>{idx + 1}</td>
+                                  <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: '700', color: 'var(--texto-suave)' }}>{item.numero_item ?? idx + 1}</td>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>{item.produtos?.categoria || '—'}</td>
                                   <td style={{ padding: '4px 8px', fontWeight: '600', color: 'var(--acao)' }}>{item.produtos?.sku || '—'}</td>
                                   <td style={{ padding: '4px 8px', color: '#374151' }}>
@@ -759,6 +885,130 @@ export default function PedidosPage() {
           </tbody>
         </table>
       </div>
+
+      {showImportPed && (
+        <div onClick={() => !importandoPed && setShowImportPed(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '22px', maxWidth: '860px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 6px' }}>Importar pedidos por planilha</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Pedido</b>, <b>Item</b> (Nº do item), <b>Código</b>, <b>Banho</b>, <b>Quantidade</b>, <b>Quando</b> e <b>Valor</b> (unitário). As colunas Tipo e Fabricante são ignoradas (valem as do cadastro do produto).
+              Pedidos que já existem são ignorados. Se alguma linha de um pedido tiver problema, o pedido inteiro fica de fora para não entrar incompleto.
+            </p>
+
+            {resultadoPed ? (
+              <div style={{ padding: '14px', backgroundColor: resultadoPed.falhas.length > 0 ? '#fffbeb' : '#ecfdf5', border: `1px solid ${resultadoPed.falhas.length > 0 ? '#fde68a' : '#a7f3d0'}`, borderRadius: '8px', color: '#065f46', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                <b>Importação concluída.</b><br />
+                {resultadoPed.criados} pedido(s) criado(s)
+                {resultadoPed.ignorados > 0 && <> · {resultadoPed.ignorados} ignorado(s) por já existirem</>}
+                {resultadoPed.falhas.length > 0 && (
+                  <div style={{ color: '#b45309', marginTop: '6px' }}>
+                    {resultadoPed.falhas.length} pedido(s) não puderam ser criados: {resultadoPed.falhas.map(f => `${f.numero} (${f.motivo})`).join('; ')}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <button type="button" onClick={() => baixarModeloPedidos()}
+                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Baixar modelo (.xlsx)
+                  </button>
+                  <label style={{ padding: '9px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Escolher arquivo
+                    <input type="file" accept=".xlsx,.csv,.txt" onChange={handleArquivoPedidos} style={{ display: 'none' }} />
+                  </label>
+                  {nomeArqPed && <span style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{nomeArqPed}</span>}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px', fontSize: '13px', color: '#334155' }}>
+                  <span style={{ fontWeight: '600' }}>Status dos pedidos importados:</span>
+                  <select value={statusImpPed} onChange={e => setStatusImpPed(e.target.value as 'aberto' | 'em_fabricacao' | 'fechado')} disabled={importandoPed}
+                    style={{ padding: '7px 10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '13px', backgroundColor: 'white' }}>
+                    <option value="aberto">Aberto</option>
+                    <option value="em_fabricacao">Em Fabricação</option>
+                    <option value="fechado">Fechado</option>
+                  </select>
+                </div>
+
+                {erroImpPed && (
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>{erroImpPed}</div>
+                )}
+
+                {analisePedidos.length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '13px', marginBottom: '10px' }}>
+                      <span style={{ color: '#047857', fontWeight: '600' }}>
+                        {pedidosProntos.length} pedido(s) pronto(s) · {pedidosProntos.reduce((t, a) => t + a.linhas.length, 0)} item(ns) · {formatarMoeda(pedidosProntos.reduce((t, a) => t + a.total, 0))}
+                      </span>
+                      {pedidosExistentes.length > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{pedidosExistentes.length} já existe(m) (ignorados)</span>}
+                      {pedidosComProblema.length > 0 && <span style={{ color: '#b91c1c', fontWeight: '600' }}>{pedidosComProblema.length} com problema (ignorados)</span>}
+                    </div>
+
+                    {prefixosProntos.length > 0 && (
+                      <div style={{ border: '1px solid var(--borda)', borderRadius: '8px', padding: '12px', marginBottom: '14px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '8px' }}>Cliente de cada pedido (pelo prefixo do número)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {prefixosProntos.map(pf => (
+                            <div key={pf} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '13px' }}>
+                              <span style={{ width: '130px', fontWeight: '700', color: 'var(--texto)' }}>{pf} <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>({pedidosProntos.filter(a => a.prefixo === pf).length} ped.)</span></span>
+                              <select value={mapaClientes[pf] || ''} onChange={e => setMapaClientes({ ...mapaClientes, [pf]: e.target.value })} disabled={importandoPed}
+                                style={{ flex: 1, minWidth: '200px', padding: '8px 10px', border: `1px solid ${mapaClientes[pf] ? 'var(--borda)' : '#f59e0b'}`, borderRadius: 'var(--raio-sm)', fontSize: '13px', backgroundColor: 'white' }}>
+                                <option value="">Selecione o cliente</option>
+                                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(pedidosExistentes.length > 0 || pedidosComProblema.length > 0) && (
+                      <div style={{ border: '1px solid var(--borda)', borderRadius: '8px', maxHeight: '200px', overflow: 'auto', marginBottom: '16px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Pedido</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Motivo (não será importado)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...pedidosComProblema, ...pedidosExistentes].slice(0, 200).map(a => (
+                              <tr key={a.numero} style={{ borderTop: '1px solid #f1f5f9', backgroundColor: a.situacao === 'problema' ? '#fef2f2' : '#fffbeb' }}>
+                                <td style={{ padding: '6px 10px', fontWeight: '600', color: 'var(--texto)', whiteSpace: 'nowrap' }}>{a.numero}</td>
+                                <td style={{ padding: '6px 10px', color: a.situacao === 'problema' ? '#b91c1c' : '#b45309' }}>
+                                  {a.situacao === 'existe' ? 'Pedido já cadastrado' : a.motivos.slice(0, 3).join(' | ') + (a.motivos.length > 3 ? ` | e mais ${a.motivos.length - 3}` : '')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {prefixosSemCliente.length > 0 && (
+                      <p style={{ fontSize: '12px', color: '#b45309', margin: '0 0 12px' }}>Escolha o cliente de: {prefixosSemCliente.join(', ')}</p>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowImportPed(false)} disabled={importandoPed}
+                style={{ padding: '10px 18px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                {resultadoPed ? 'Fechar' : 'Cancelar'}
+              </button>
+              {!resultadoPed && (
+                <button onClick={handleImportarPedidos} disabled={!podeImportarPedidos}
+                  style={{ padding: '10px 18px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px', cursor: podeImportarPedidos ? 'pointer' : 'not-allowed', opacity: podeImportarPedidos ? 1 : 0.5 }}>
+                  {importandoPed ? (progressoPed || 'Importando...') : `Importar ${pedidosProntos.length} pedido(s)`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showTerceiros && (
         <div onClick={() => !gerandoPdf && setShowTerceiros(false)}
