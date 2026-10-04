@@ -6,8 +6,8 @@ import { listarCategorias } from '../categorias/actions';
 import { listarItens } from '../itens/actions';
 import { listarFabricantes } from '../fabricantes/actions';
 import { listarPadroes } from '../padroes-itens/actions';
-import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos, aplicarPadraoProduto } from './actions';
-import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, indexarFotos, reduzirImagem, enviarFoto, type LinhaProduto, type FotosIndexadas } from './importar';
+import { listarProdutos, criarProduto, atualizarProduto, deletarProduto, listarItensProduto, salvarItensProduto, listarValoresProdutos, importarProdutos, aplicarPadraoProduto, importarItensProdutos } from './actions';
+import { lerPlanilha, interpretarPlanilhaProdutos, baixarModeloProdutos, indexarFotos, reduzirImagem, enviarFoto, interpretarPlanilhaItensProduto, baixarModeloItensProduto, chaveTexto, type LinhaProduto, type LinhaItemProduto, type FotosIndexadas } from './importar';
 
 const UNIDADES_ITEM: Record<string, string> = { metro: 'Metro', peca: 'Peça', servico: 'Serviço' };
 
@@ -68,6 +68,13 @@ export default function ProdutosPage() {
   const [novoItemId, setNovoItemId] = useState('');
   const [novaQtd, setNovaQtd] = useState('');
   const [padroes, setPadroes] = useState<{ id: string; nome: string; padroes_itens_linhas: { item_id: string }[] }[]>([]);
+  const [showImportarItens, setShowImportarItens] = useState(false);
+  const [nomeArquivoItens, setNomeArquivoItens] = useState('');
+  const [linhasItens, setLinhasItens] = useState<LinhaItemProduto[]>([]);
+  const [erroImportItens, setErroImportItens] = useState('');
+  const [importandoItens, setImportandoItens] = useState(false);
+  const [progressoItens, setProgressoItens] = useState('');
+  const [resultadoItens, setResultadoItens] = useState<{ gravados: number; produtosAtingidos: number } | null>(null);
   const [fabricantes, setFabricantes] = useState<{ id: string; nome: string }[]>([]);
   const [produtoPadrao, setProdutoPadrao] = useState<Produto | null>(null);
   const [aplicandoPadrao, setAplicandoPadrao] = useState(false);
@@ -242,6 +249,76 @@ export default function ProdutosPage() {
     }
   };
 
+  const abrirImportarItens = () => {
+    setNomeArquivoItens('');
+    setLinhasItens([]);
+    setErroImportItens('');
+    setProgressoItens('');
+    setResultadoItens(null);
+    setShowImportarItens(true);
+  };
+
+  const handleArquivoItens = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!arquivo) return;
+    setNomeArquivoItens(arquivo.name);
+    setLinhasItens([]);
+    setErroImportItens('');
+    try {
+      const dados = await lerPlanilha(arquivo);
+      const { linhas, erro } = interpretarPlanilhaItensProduto(dados);
+      if (erro) setErroImportItens(erro);
+      else setLinhasItens(linhas);
+    } catch (err) {
+      setErroImportItens(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.');
+    }
+  };
+
+  const produtosPorCodigo = new Set(produtos.map(pr => chaveTexto(pr.sku || '')));
+  const itensPorNome = new Set(itensCatalogo.map(i => chaveTexto(i.nome)));
+
+  const analiseItens = linhasItens.map(l => {
+    let situacao: 'ok' | 'erro' | 'sem_produto' | 'sem_item' = 'ok';
+    let motivo = '';
+    if (l.erros.length > 0) { situacao = 'erro'; motivo = l.erros.join('; '); }
+    else if (!produtosPorCodigo.has(chaveTexto(l.produto))) { situacao = 'sem_produto'; motivo = 'Produto não cadastrado'; }
+    else if (!itensPorNome.has(chaveTexto(l.item))) { situacao = 'sem_item'; motivo = 'Item não cadastrado'; }
+    return { ...l, situacao, motivo };
+  });
+  const itensValidos = analiseItens.filter(l => l.situacao === 'ok');
+  const itensComErro = analiseItens.filter(l => l.situacao === 'erro').length;
+  const produtosFaltandoLista = Array.from(new Set(analiseItens.filter(l => l.situacao === 'sem_produto').map(l => l.produto)));
+  const itensFaltandoLista = Array.from(new Set(analiseItens.filter(l => l.situacao === 'sem_item').map(l => l.item)));
+  const problemasItens = analiseItens.filter(l => l.situacao !== 'ok');
+
+  const handleImportarItens = async () => {
+    if (itensValidos.length === 0) return;
+    setImportandoItens(true);
+    setErroImportItens('');
+    let gravados = 0;
+    const atingidos = new Set<string>();
+    for (let i = 0; i < itensValidos.length; i += 1000) {
+      const lote = itensValidos.slice(i, i + 1000);
+      setProgressoItens(`Gravando ${Math.min(i + 1000, itensValidos.length)} de ${itensValidos.length}...`);
+      const res = await importarItensProdutos(lote.map(l => ({ produto: l.produto, item: l.item, quantidade: l.quantidade as number })));
+      if (!res.success) {
+        setErroImportItens(`${res.error || 'Erro ao importar'}${gravados > 0 ? ` (já foram gravados ${gravados} itens antes do erro)` : ''}`);
+        setProgressoItens('');
+        setImportandoItens(false);
+        if (gravados > 0) await carregarProdutos();
+        return;
+      }
+      gravados += res.gravados ?? 0;
+      lote.forEach(l => atingidos.add(chaveTexto(l.produto)));
+    }
+    setProgressoItens('');
+    setResultadoItens({ gravados, produtosAtingidos: atingidos.size });
+    setLinhasItens([]);
+    await carregarProdutos();
+    setImportandoItens(false);
+  };
+
   const codigosExistentes = new Set(produtos.map(pr => (pr.sku || '').trim().toLowerCase()));
   const categoriasExistentes = new Set(categorias.map(c => c.nome.trim().toLowerCase()));
 
@@ -387,6 +464,11 @@ export default function ProdutosPage() {
           </span>
         </h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          onClick={abrirImportarItens}
+          style={{ padding: '10px 16px', backgroundColor: 'white', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+          Importar itens
+        </button>
         <button
           onClick={abrirImportar}
           style={{ padding: '10px 16px', backgroundColor: 'white', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
@@ -846,6 +928,108 @@ export default function ProdutosPage() {
                 style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: enviandoItens ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: enviandoItens ? 0.6 : 1 }}>
                 {enviandoItens ? 'Salvando...' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showImportarItens && (
+        <div onClick={() => !importandoItens && setShowImportarItens(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '820px', width: '94%', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sombra-modal)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--texto)', margin: '0 0 6px' }}>Importar itens dos produtos</h2>
+            <p style={{ fontSize: '13px', color: 'var(--texto-suave)', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Envie um arquivo <b>.xlsx</b> ou <b>.csv</b> com os títulos na primeira linha: <b>Produto</b> (código/SKU), <b>ItemProduto</b> (nome do item, como está em Itens) e <b>Quantidade</b>. Outras colunas (Unidade, Quando) são ignoradas.
+              Se o produto já tiver o item, a quantidade é atualizada; os demais itens do produto não são mexidos. Os produtos e itens precisam estar cadastrados.
+            </p>
+
+            {resultadoItens ? (
+              <div style={{ padding: '14px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', color: '#065f46', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                <b>Importação concluída.</b><br />
+                {resultadoItens.gravados} item(ns) gravado(s) em {resultadoItens.produtosAtingidos} produto(s)
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <button type="button" onClick={() => baixarModeloItensProduto()}
+                    style={{ padding: '9px 14px', backgroundColor: '#f1f5f9', color: 'var(--acao)', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Baixar modelo (.xlsx)
+                  </button>
+                  <label style={{ padding: '9px 14px', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', border: '1px solid var(--acao)', borderRadius: 'var(--raio-sm)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                    Escolher arquivo
+                    <input type="file" accept=".xlsx,.csv,.txt" onChange={handleArquivoItens} style={{ display: 'none' }} />
+                  </label>
+                  {nomeArquivoItens && <span style={{ fontSize: '12px', color: 'var(--texto-suave)' }}>{nomeArquivoItens}</span>}
+                </div>
+
+                {erroImportItens && (
+                  <div style={{ padding: '10px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--raio-sm)', color: '#b91c1c', fontSize: '13px', marginBottom: '14px' }}>
+                    {erroImportItens}
+                  </div>
+                )}
+
+                {analiseItens.length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '13px', marginBottom: '8px' }}>
+                      <span style={{ color: '#047857', fontWeight: '600' }}>{itensValidos.length} linha(s) pronta(s) para importar</span>
+                      {produtosFaltandoLista.length > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{produtosFaltandoLista.length} produto(s) não cadastrado(s)</span>}
+                      {itensFaltandoLista.length > 0 && <span style={{ color: '#b45309', fontWeight: '600' }}>{itensFaltandoLista.length} item(ns) não cadastrado(s)</span>}
+                      {itensComErro > 0 && <span style={{ color: '#b91c1c', fontWeight: '600' }}>{itensComErro} com erro</span>}
+                    </div>
+                    {itensFaltandoLista.length > 0 && (
+                      <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 8px', lineHeight: 1.5 }}>
+                        Itens que não existem em Cadastros → Itens (cadastre-os e importe de novo para incluir estas linhas): <b>{itensFaltandoLista.join(', ')}</b>
+                      </p>
+                    )}
+                    {produtosFaltandoLista.length > 0 && (
+                      <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 8px', lineHeight: 1.5 }}>
+                        Produtos não encontrados: <b>{produtosFaltandoLista.slice(0, 40).join(', ')}{produtosFaltandoLista.length > 40 ? ` e mais ${produtosFaltandoLista.length - 40}` : ''}</b>
+                      </p>
+                    )}
+                    {problemasItens.length > 0 && (
+                      <div style={{ border: '1px solid var(--borda)', borderRadius: '8px', maxHeight: '220px', overflow: 'auto', margin: '8px 0 16px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Linha</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Produto</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Item</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Qtd</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--texto-suave)' }}>Problema (não será importada)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {problemasItens.slice(0, 300).map(l => (
+                              <tr key={l.linha} style={{ borderTop: '1px solid #f1f5f9', backgroundColor: l.situacao === 'erro' ? '#fef2f2' : '#fffbeb' }}>
+                                <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{l.linha}</td>
+                                <td style={{ padding: '6px 10px', color: 'var(--texto)', fontWeight: '600' }}>{l.produto || '—'}</td>
+                                <td style={{ padding: '6px 10px', color: '#475569' }}>{l.item || '—'}</td>
+                                <td style={{ padding: '6px 10px', color: '#475569' }}>{l.quantidade ?? '—'}</td>
+                                <td style={{ padding: '6px 10px', color: l.situacao === 'erro' ? '#b91c1c' : '#b45309' }}>{l.motivo}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {problemasItens.length > 300 && <div style={{ padding: '8px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Mostrando as primeiras 300 de {problemasItens.length} linhas com problema.</div>}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowImportarItens(false)} disabled={importandoItens}
+                style={{ padding: '10px 20px', border: '1px solid var(--borda)', backgroundColor: 'white', color: '#374151', borderRadius: 'var(--raio-sm)', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                {resultadoItens ? 'Fechar' : 'Cancelar'}
+              </button>
+              {!resultadoItens && (
+                <button onClick={handleImportarItens} disabled={importandoItens || itensValidos.length === 0}
+                  style={{ padding: '10px 20px', backgroundColor: 'var(--acao)', color: 'white', border: 'none', borderRadius: 'var(--raio-sm)', cursor: importandoItens || itensValidos.length === 0 ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', opacity: importandoItens || itensValidos.length === 0 ? 0.5 : 1 }}>
+                  {importandoItens ? (progressoItens || 'Importando...') : `Importar ${itensValidos.length} linha(s)`}
+                </button>
+              )}
             </div>
           </div>
         </div>

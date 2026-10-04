@@ -192,3 +192,83 @@ export async function baixarModeloProdutos() {
     ['', 'Colar', 'CO-001', '', '', ''],
   ]).toFile('modelo-produtos.xlsx');
 }
+
+// ---- Importação dos itens de cada produto (planilha: Produto, ItemProduto, Quantidade) ----
+
+export const MAX_LINHAS_ITENS = 20000;
+
+export interface LinhaItemProduto {
+  linha: number;
+  produto: string;
+  item: string;
+  quantidade: number | null;
+  erros: string[];
+}
+
+const COLUNAS_ITENS: Record<'produto' | 'item' | 'quantidade', string[]> = {
+  produto: ['produto', 'codigo', 'codigo sku', 'codigo (sku)', 'sku', 'cod', 'ref', 'referencia'],
+  item: ['itemproduto', 'item produto', 'item do produto', 'item', 'itens', 'componente'],
+  quantidade: ['quantidade', 'qtd', 'qtde', 'quant'],
+};
+
+export const chaveTexto = (v: string) => normalizar(v).replace(/\s+/g, ' ');
+
+export function interpretarPlanilhaItensProduto(dados: string[][]): { linhas: LinhaItemProduto[]; erro?: string } {
+  const preenchidas = dados
+    .map((cels, i) => ({ cels, numero: i + 1 }))
+    .filter(l => l.cels.some(c => String(c).trim() !== ''));
+
+  if (preenchidas.length === 0) return { linhas: [], erro: 'A planilha está vazia.' };
+
+  const cabecalho = preenchidas[0].cels.map(normalizar);
+  const indice = (chave: keyof typeof COLUNAS_ITENS) => cabecalho.findIndex(h => COLUNAS_ITENS[chave].includes(h));
+  const idx = { produto: indice('produto'), item: indice('item'), quantidade: indice('quantidade') };
+
+  const faltando = [
+    idx.produto === -1 ? 'Produto' : '',
+    idx.item === -1 ? 'ItemProduto' : '',
+    idx.quantidade === -1 ? 'Quantidade' : '',
+  ].filter(Boolean);
+  if (faltando.length > 0) {
+    return { linhas: [], erro: `A primeira linha deve ter os títulos Produto, ItemProduto e Quantidade. Não encontrei: ${faltando.join(', ')}.` };
+  }
+
+  const corpo = preenchidas.slice(1);
+  if (corpo.length === 0) return { linhas: [], erro: 'A planilha só tem o cabeçalho, sem nenhuma linha.' };
+  if (corpo.length > MAX_LINHAS_ITENS) return { linhas: [], erro: `Máximo de ${MAX_LINHAS_ITENS} linhas por importação (a planilha tem ${corpo.length}).` };
+
+  const linhas: LinhaItemProduto[] = corpo.map(({ cels, numero }) => {
+    const pega = (i: number) => String(cels[i] ?? '').trim();
+    const erros: string[] = [];
+
+    const produto = pega(idx.produto);
+    if (!produto) erros.push('Produto vazio');
+
+    const item = pega(idx.item);
+    if (!item) erros.push('Item vazio');
+
+    const bruto = pega(idx.quantidade);
+    let quantidade: number | null = null;
+    if (!bruto) erros.push('Quantidade vazia');
+    else {
+      quantidade = lerNumero(bruto);
+      if (quantidade === null) erros.push(`Quantidade "${bruto}" inválida`);
+      else if (quantidade < 0) erros.push('Quantidade não pode ser negativa');
+    }
+
+    return { linha: numero, produto, item, quantidade, erros };
+  });
+
+  return { linhas };
+}
+
+export async function baixarModeloItensProduto() {
+  const { default: writeExcelFile } = await import('write-excel-file/browser');
+  const titulo = (value: string) => ({ value, fontWeight: 'bold' as const });
+  await writeExcelFile([
+    [titulo('Produto'), titulo('ItemProduto'), titulo('Quantidade')],
+    ['AN-001', 'Montagem', 1],
+    ['AN-001', 'Galvânica -Ouro', 2],
+    ['BR-001', 'Montagem', 1],
+  ]).toFile('modelo-itens-produto.xlsx');
+}

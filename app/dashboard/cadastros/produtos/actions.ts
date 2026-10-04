@@ -275,3 +275,73 @@ export async function aplicarPadraoProduto(produtoId: string, padraoId: string) 
   revalidatePath('/dashboard/cadastros/produtos');
   return { success: true, inseridos: novos.length, ignorados: linhas.length - novos.length };
 }
+
+const chaveTexto = (v: string) =>
+  String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.]/g, '').replace(/\s+/g, ' ').trim();
+
+// Grava os itens de vários produtos de uma vez. Se o produto já tem o item, atualiza a quantidade;
+// os outros itens do produto não são mexidos.
+export async function importarItensProdutos(linhas: { produto: string; item: string; quantidade: number }[]) {
+  if (!Array.isArray(linhas) || linhas.length === 0) return { success: false, error: 'Nenhuma linha para importar' };
+  if (linhas.length > 1000) return { success: false, error: 'Máximo de 1000 linhas por envio' };
+  if (linhas.some(l => !l.produto?.trim() || !l.item?.trim() || typeof l.quantidade !== 'number' || !Number.isFinite(l.quantidade) || l.quantidade < 0)) {
+    return { success: false, error: 'Há linhas com produto, item ou quantidade inválidos' };
+  }
+
+  const supabase = await createClient();
+
+  const produtos = new Map<string, string>();
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('id, sku')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (error) return { success: false, error: error.message };
+    (data || []).forEach(p => produtos.set(chaveTexto(String(p.sku)), p.id));
+    if (!data || data.length < 1000) break;
+  }
+
+  const itens = new Map<string, string>();
+  for (let inicio = 0; ; inicio += 1000) {
+    const { data, error } = await supabase
+      .from('itens')
+      .select('id, nome')
+      .eq('empresa_id', EMPRESA_ID)
+      .order('id')
+      .range(inicio, inicio + 999);
+    if (error) return { success: false, error: error.message };
+    (data || []).forEach(i => itens.set(chaveTexto(String(i.nome)), i.id));
+    if (!data || data.length < 1000) break;
+  }
+
+  const gravar = new Map<string, { empresa_id: string; produto_id: string; item_id: string; quantidade: number }>();
+  const produtosFaltando = new Set<string>();
+  const itensFaltando = new Set<string>();
+  for (const l of linhas) {
+    const produtoId = produtos.get(chaveTexto(l.produto));
+    const itemId = itens.get(chaveTexto(l.item));
+    if (!produtoId) produtosFaltando.add(l.produto.trim());
+    if (!itemId) itensFaltando.add(l.item.trim());
+    if (!produtoId || !itemId) continue;
+    gravar.set(`${produtoId}|${itemId}`, { empresa_id: EMPRESA_ID, produto_id: produtoId, item_id: itemId, quantidade: l.quantidade });
+  }
+
+  const registros = [...gravar.values()];
+  for (let i = 0; i < registros.length; i += 500) {
+    const { error } = await supabase
+      .from('produto_itens')
+      .upsert(registros.slice(i, i + 500), { onConflict: 'produto_id,item_id' });
+    if (error) return { success: false, error: error.message };
+  }
+
+  revalidatePath('/dashboard/cadastros/produtos');
+  return {
+    success: true,
+    gravados: registros.length,
+    produtosAtingidos: new Set(registros.map(r => r.produto_id)).size,
+    produtosFaltando: [...produtosFaltando],
+    itensFaltando: [...itensFaltando],
+  };
+}
