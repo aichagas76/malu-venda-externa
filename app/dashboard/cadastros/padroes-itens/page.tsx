@@ -111,8 +111,8 @@ export default function PadroesItensPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--borda)' }}>
-              <th style={th}>Nome</th>
-              <th style={th}>Itens</th>
+              <th style={th}>Nome do Padrão</th>
+              <th style={th}>Itens Inclusos</th>
               <th style={{ ...th, textAlign: 'center', width: '120px' }}>Ações</th>
             </tr>
           </thead>
@@ -126,11 +126,20 @@ export default function PadroesItensPage() {
             ) : (
               padroes.map(padrao => (
                 <tr key={padrao.id} style={{ borderBottom: '1px solid var(--borda)' }}>
-                  <td style={{ padding: '12px 16px', fontSize: '14px', color: 'var(--texto)', fontWeight: '500' }}>{padrao.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--texto-suave)' }}>
-                    {padrao.padroes_itens_linhas.length === 0
-                      ? '—'
-                      : padrao.padroes_itens_linhas.map(l => `${nomeItem(l.item_id)} (${Number(l.quantidade).toLocaleString('pt-BR')})`).join(' · ')}
+                  <td style={{ padding: '16px', fontSize: '15px', color: 'var(--texto)', fontWeight: '700' }}>{padrao.nome}</td>
+                  <td style={{ padding: '16px' }}>
+                    {padrao.padroes_itens_linhas.length === 0 ? (
+                      <span style={{ color: '#94a3b8', fontSize: '13px' }}>—</span>
+                    ) : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {padrao.padroes_itens_linhas.map(l => (
+                          <span key={l.item_id} title={`Quantidade: ${Number(l.quantidade).toLocaleString('pt-BR')}`}
+                            style={{ padding: '4px 10px', backgroundColor: '#fee2d5', color: '#b91c1c', borderRadius: '6px', fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                            {nomeItem(l.item_id)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
