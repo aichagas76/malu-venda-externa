@@ -15,6 +15,7 @@ import {
   deletarItemPedido,
   gerarListaCompras,
 } from './actions';
+import { listarCategorias } from '../cadastros/categorias/actions';
 import { baixarListaComprasPdf, formatarMoeda, formatarQuantidade, UNIDADE_ROTULO, type ListaComprasData } from './compras';
 
 interface Cliente { id: string; nome: string }
@@ -22,7 +23,6 @@ interface Produto { id: string; nome: string; sku: string; categoria: string; ba
 interface ItemPedido { id: string; quantidade: number; preco_unitario: number; banho?: string; etapa_fabricacao?: string | null; produtos?: { id: string; nome: string; sku: string; categoria: string } }
 interface Pedido { id: string; numero_pedido: string; data_pedido: string; status: string; valor_total: number; clientes?: { id: string; nome: string } | null }
 
-const TIPOS = ['Anel', 'Brinco', 'Colar', 'Pulseira', 'Pingente', 'Corrente', 'Aliança', 'Conjunto', 'Tornozeleira', 'Piercing', 'Outro'];
 const BANHOS = ['Ouro', 'Prata', 'Diamante'];
 
 const ETAPA_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
@@ -61,6 +61,7 @@ function QtdStepper({ value, onChange, compacto = false }: { value: number; onCh
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [tipos, setTipos] = useState<string[]>([]);
   const [produtosPorTipo, setProdutosPorTipo] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -97,10 +98,12 @@ export default function PedidosPage() {
   }, []);
 
   async function carregarDados() {
-    const [pedidosRes, clientesRes] = await Promise.all([
+    const [pedidosRes, clientesRes, categoriasRes] = await Promise.all([
       listarPedidos(),
       listarClientes(),
+      listarCategorias(),
     ]);
+    if (categoriasRes.success) setTipos((categoriasRes.data as { nome: string }[]).map(c => c.nome).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })));
     if (pedidosRes.success) setPedidos(pedidosRes.data as Pedido[]);
     if (clientesRes.success) setClientes([...clientesRes.data].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })));
     setLoading(false);
@@ -394,7 +397,7 @@ export default function PedidosPage() {
               <label style={labelStyle}>Tipo</label>
               <select value={tipo} onChange={(e) => handleCarregarProdutosPorTipo(e.target.value)} style={{ ...inputStyle, color: '#111827' }}>
                 <option value="">Selecione o tipo</option>
-                {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+                {tipos.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div style={{ width: '100px' }}>
