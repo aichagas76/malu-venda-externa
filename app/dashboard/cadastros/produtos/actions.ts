@@ -26,7 +26,7 @@ export async function listarProdutos() {
   return { success: true, data: todos };
 }
 
-export async function criarProduto(nome: string, sku: string, categoria: string, peso: string, foto: string) {
+export async function criarProduto(nome: string, sku: string, categoria: string, peso: string, foto: string, fabricante: string) {
   const supabase = await createClient();
 
   if (!sku.trim()) return { success: false, error: 'Código (SKU) é obrigatório' };
@@ -40,6 +40,7 @@ export async function criarProduto(nome: string, sku: string, categoria: string,
       categoria: categoria.trim() || null,
       peso: peso ? parseFloat(peso) : null,
       imagem_url: foto.trim() || null,
+      fabricante: fabricante.trim() || null,
     }])
     .select()
     .single();
@@ -49,7 +50,7 @@ export async function criarProduto(nome: string, sku: string, categoria: string,
   return { success: true, data };
 }
 
-export async function atualizarProduto(produtoId: string, nome: string, sku: string, categoria: string, peso: string, foto: string) {
+export async function atualizarProduto(produtoId: string, nome: string, sku: string, categoria: string, peso: string, foto: string, fabricante: string) {
   const supabase = await createClient();
 
   if (!sku.trim()) return { success: false, error: 'Código (SKU) é obrigatório' };
@@ -62,6 +63,7 @@ export async function atualizarProduto(produtoId: string, nome: string, sku: str
       categoria: categoria.trim() || null,
       peso: peso ? parseFloat(peso) : null,
       imagem_url: foto.trim() || null,
+      fabricante: fabricante.trim() || null,
     })
     .eq('id', produtoId)
     .eq('empresa_id', EMPRESA_ID);

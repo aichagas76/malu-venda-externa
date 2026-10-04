@@ -16,6 +16,7 @@ interface Produto {
   sku?: string;
   categoria?: string;
   peso?: number;
+  fabricante?: string;
   imagem_url?: string;
   criado_em?: string;
 }
@@ -26,9 +27,10 @@ interface FormData {
   categoria: string;
   peso: string;
   foto: string;
+  fabricante: string;
 }
 
-const FORM_INICIAL: FormData = { nome: '', sku: '', categoria: '', peso: '', foto: '' };
+const FORM_INICIAL: FormData = { nome: '', sku: '', categoria: '', peso: '', foto: '', fabricante: '' };
 
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -151,6 +153,7 @@ export default function ProdutosPage() {
       categoria: produto.categoria || '',
       peso: produto.peso ? produto.peso.toString() : '',
       foto: produto.imagem_url || '',
+      fabricante: produto.fabricante || '',
     });
     setShowModal(true);
   };
@@ -345,8 +348,8 @@ export default function ProdutosPage() {
     }
 
     const result = editando
-      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria, formData.peso, foto)
-      : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, foto);
+      ? await atualizarProduto(editando.id, formData.nome, formData.sku, formData.categoria, formData.peso, foto, formData.fabricante)
+      : await criarProduto(formData.nome, formData.sku, formData.categoria, formData.peso, foto, formData.fabricante);
 
     if (result.success) {
       await carregarProdutos();
@@ -651,6 +654,21 @@ export default function ProdutosPage() {
                   placeholder="Nome do produto"
                   style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Fabricante</label>
+                <input
+                  type="text"
+                  list="lista-fabricantes"
+                  value={formData.fabricante}
+                  onChange={e => setFormData({ ...formData, fabricante: e.target.value })}
+                  placeholder="Ex.: MALU ou o nome do terceiro"
+                  style={{ width: '100%', padding: '10px', border: '1px solid var(--borda)', borderRadius: 'var(--raio-sm)', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+                <datalist id="lista-fabricantes">
+                  {Array.from(new Set(produtos.map(p => (p.fabricante || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })).map(f => <option key={f} value={f} />)}
+                </datalist>
               </div>
 
               <div>
