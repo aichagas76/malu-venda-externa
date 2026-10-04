@@ -289,3 +289,8 @@ button[style*="var(--acao-suave)"]:not(:disabled):hover { border-color: var(--ac
 /* Cartões: borda sutil e sombra quase imperceptível */
 .stat-card { box-shadow: var(--sombra-sutil) !important; }
 .stat-card:hover { box-shadow: var(--sombra-media) !important; }
+
+/* Campo de quantidade com botões −/+: sem as setas nativas do navegador */
+.qtd-input::-webkit-outer-spin-button,
+.qtd-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qtd-input { -moz-appearance: textfield; appearance: textfield; }

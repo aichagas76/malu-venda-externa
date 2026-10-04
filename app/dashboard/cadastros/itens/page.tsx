@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { listarItens, criarItem, atualizarItem, deletarItem, importarItens } from './actions';
 import { lerPlanilha, interpretarPlanilha, baixarModelo, type LinhaImportacao } from './importar';
@@ -41,6 +42,8 @@ export default function ItensPage() {
   const [formData, setFormData] = useState<FormData>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
   const [filtroNome, setFiltroNome] = useState('');
+  const [nomeAberto, setNomeAberto] = useState(false);
+  const [nomeBusca, setNomeBusca] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroUnidade, setFiltroUnidade] = useState('');
 
@@ -166,8 +169,12 @@ export default function ItensPage() {
     return <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Carregando...</div>;
   }
 
+  const nomesLista = Array.from(new Set(itens.map(i => i.nome).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
+    .filter(n => n.toLowerCase().includes(nomeBusca.trim().toLowerCase()));
+
   const itensFiltrados = itens.filter(i =>
-    (!filtroNome.trim() || (i.nome || '').toLowerCase().includes(filtroNome.trim().toLowerCase())) &&
+    (!filtroNome || i.nome === filtroNome) &&
     (!filtroFornecedor || nomeFornecedor(i) === filtroFornecedor) &&
     (!filtroUnidade || i.unidade === filtroUnidade)
   );
@@ -197,7 +204,35 @@ export default function ItensPage() {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
         <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
           <label style={rotulo}>Nome</label>
-          <input type="text" value={filtroNome} onChange={e => setFiltroNome(e.target.value)} placeholder="Filtrar por nome" style={campo} />
+          <div style={{ position: 'relative' }}>
+            <button type="button" onClick={() => { setNomeAberto(!nomeAberto); setNomeBusca(''); }}
+              style={{ ...campo, color: filtroNome ? 'var(--texto)' : 'var(--texto-suave)', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filtroNome || 'Todos os nomes'}</span>
+              <ChevronDown size={14} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+            </button>
+            {nomeAberto && (
+              <>
+                <div onClick={() => setNomeAberto(false)} style={{ position: 'fixed', inset: 0, zIndex: 19 }} />
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: '2px', backgroundColor: 'white', border: '1px solid var(--borda-forte)', borderRadius: 'var(--raio-sm)', boxShadow: 'var(--sombra-media)' }}>
+                  <div style={{ padding: '6px', borderBottom: '1px solid var(--borda)' }}>
+                    <input type="text" autoFocus value={nomeBusca} onChange={e => setNomeBusca(e.target.value)} placeholder="Buscar nome..."
+                      style={{ ...campo, padding: '8px', fontSize: '13px' }} />
+                  </div>
+                  <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                    {!nomeBusca.trim() && (
+                      <div onClick={() => { setFiltroNome(''); setNomeAberto(false); }}
+                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', color: 'var(--texto-suave)' }}>Todos os nomes</div>
+                    )}
+                    {nomesLista.map(n => (
+                      <div key={n} onClick={() => { setFiltroNome(n); setNomeAberto(false); }}
+                        style={{ padding: '7px 10px', fontSize: '13px', cursor: 'pointer', color: 'var(--texto)', backgroundColor: n === filtroNome ? 'var(--ouro-suave)' : 'white' }}>{n}</div>
+                    ))}
+                    {nomesLista.length === 0 && <div style={{ padding: '7px 10px', fontSize: '12px', color: 'var(--texto-suave)' }}>Nenhum nome encontrado</div>}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div style={{ flex: '1 1 200px', maxWidth: '280px' }}>
           <label style={rotulo}>Fornecedor</label>

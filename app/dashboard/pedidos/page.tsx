@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, ChevronDown } from 'lucide-react';
+import { ClipboardList, ChevronDown, Minus, Plus } from 'lucide-react';
 import {
   listarPedidos,
   listarClientes,
@@ -38,6 +38,25 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }
   em_fabricacao: { label: 'Em Fabricação', bg: 'var(--atencao-bg)', color: 'var(--atencao)' },
   fechado: { label: 'Fechado', bg: 'var(--sucesso-bg)', color: 'var(--sucesso)' },
 };
+
+function QtdStepper({ value, onChange, compacto = false }: { value: number; onChange: (n: number) => void; compacto?: boolean }) {
+  const [texto, setTexto] = useState<string | null>(null);
+  const altura = compacto ? 26 : 34;
+  const btn: React.CSSProperties = { width: altura, height: altura, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--borda-forte)', backgroundColor: 'var(--acao-suave)', color: 'var(--acao)', cursor: 'pointer', padding: 0 };
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'stretch' }}>
+      <button type="button" aria-label="Diminuir quantidade" onClick={() => { setTexto(null); onChange(Math.max(1, value - 1)); }}
+        style={{ ...btn, borderRadius: '6px 0 0 6px' }}><Minus size={14} strokeWidth={2.25} aria-hidden="true" /></button>
+      <input type="number" inputMode="numeric" min="1" value={texto ?? value}
+        onChange={e => { setTexto(e.target.value); const n = parseInt(e.target.value); if (n > 0) onChange(n); }}
+        onBlur={() => { setTexto(null); if (!(value > 0)) onChange(1); }}
+        className="qtd-input"
+        style={{ width: compacto ? 44 : 56, height: altura, padding: '0 4px', border: '1px solid var(--borda-forte)', borderLeft: 'none', borderRight: 'none', textAlign: 'center', fontSize: compacto ? '12px' : '13px', boxSizing: 'border-box', borderRadius: 0, outline: 'none', backgroundColor: 'white' }} />
+      <button type="button" aria-label="Aumentar quantidade" onClick={() => { setTexto(null); onChange(value + 1); }}
+        style={{ ...btn, borderRadius: '0 6px 6px 0' }}><Plus size={14} strokeWidth={2.25} aria-hidden="true" /></button>
+    </div>
+  );
+}
 
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -385,9 +404,9 @@ export default function PedidosPage() {
                 {BANHOS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
-            <div style={{ width: '70px' }}>
+            <div style={{ width: '130px' }}>
               <label style={labelStyle}>Qtd</label>
-              <input type="number" value={quantidade} onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)} min="1" style={{ ...inputStyle, textAlign: 'center' }} />
+              <QtdStepper value={quantidade} onChange={setQuantidade} />
             </div>
             <div style={{ width: '120px' }}>
               <label style={labelStyle}>Valor Unit. (R$)</label>
@@ -559,9 +578,7 @@ export default function PedidosPage() {
                                   </td>
                                   <td style={{ padding: '4px 8px', textAlign: 'center', color: '#374151' }}>
                                     {editing ? (
-                                      <input type="number" value={editItemQtd} min="1"
-                                        onChange={e => setEditItemQtd(parseInt(e.target.value) || 1)}
-                                        style={{ width: '50px', padding: '2px 4px', border: '1px solid #d97706', borderRadius: '4px', textAlign: 'center', fontSize: '12px' }} />
+                                      <QtdStepper compacto value={editItemQtd} onChange={setEditItemQtd} />
                                     ) : item.quantidade}
                                   </td>
                                   <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
