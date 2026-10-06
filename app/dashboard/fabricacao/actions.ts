@@ -181,3 +181,69 @@ export async function salvarEncartelador(itemId: string, encarteladorNome: strin
   revalidatePath('/dashboard/fabricacao');
   return { success: true };
 }
+
+// ---- Montagem de acessórios (controle independente das etapas de produção) ----
+
+// Itens de pedidos em fabricação cujo tipo está no cadastro de Acessórios.
+// Ficam na lista até o pedido ser finalizado (sair de "em fabricação").
+export async function listarAcessorios() {
+  const supabase = await createClient();
+
+  const { data: tipos, error: errTipos } = await supabase
+    .from('acessorios_tipos')
+    .select('tipo')
+    .eq('empresa_id', EMPRESA_ID);
+  if (errTipos) return { success: false as const, error: errTipos.message, data: [], tipos: [] as string[] };
+  const listaTipos = (tipos || []).map(t => String(t.tipo));
+  if (listaTipos.length === 0) return { success: true as const, data: [], tipos: listaTipos };
+
+  const { data: pedidos, error: errPedidos } = await supabase
+    .from('pedidos')
+    .select('id')
+    .eq('empresa_id', EMPRESA_ID)
+    .eq('status', 'em_fabricacao');
+  if (errPedidos) return { success: false as const, error: errPedidos.message, data: [], tipos: listaTipos };
+  const ids = (pedidos || []).map(p => p.id as string);
+
+  const itens: unknown[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await supabase
+      .from('itens_pedido')
+      .select(`
+        id,
+        numero_item,
+        quantidade,
+        banho,
+        acessorio_finalizado_em,
+        pedido:pedido_id (id, numero_pedido, cliente:cliente_id (nome)),
+        produto:produto_id!inner (id, nome, sku, categoria, imagem_url)
+      `)
+      .in('pedido_id', ids.slice(i, i + 100))
+      .in('produto.categoria', listaTipos);
+    if (error) return { success: false as const, error: error.message, data: [], tipos: listaTipos };
+    itens.push(...(data || []));
+  }
+  return { success: true as const, data: itens, tipos: listaTipos };
+}
+
+export async function finalizarAcessorio(itemId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('itens_pedido')
+    .update({ acessorio_finalizado_em: new Date().toISOString() })
+    .eq('id', itemId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/dashboard/fabricacao');
+  return { success: true };
+}
+
+export async function reabrirAcessorio(itemId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('itens_pedido')
+    .update({ acessorio_finalizado_em: null })
+    .eq('id', itemId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/dashboard/fabricacao');
+  return { success: true };
+}

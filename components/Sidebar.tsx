@@ -14,6 +14,7 @@ const menuItems = [
     label: 'Cadastros',
     icon: ClipboardList,
     submenu: [
+      { href: '/dashboard/cadastros/acessorios', label: 'Acessórios' },
       { href: '/dashboard/cadastros/clientes', label: 'Clientes' },
       { href: '/dashboard/cadastros/categorias', label: 'Categorias' },
       { href: '/dashboard/cadastros/encarteladores', label: 'Encarteladores' },

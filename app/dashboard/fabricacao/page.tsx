@@ -6,6 +6,7 @@ import { listarPrestadores } from '../cadastros/prestadores/actions';
 import { listarSoldadores } from '../cadastros/soldadores/actions';
 import { listarEncarteladores } from '../cadastros/encarteladores/actions';
 import { Factory, ArrowDownToLine, Check } from 'lucide-react';
+import MontagemAcessorios from './MontagemAcessorios';
 
 const ETAPAS = [
   { key: 'montagem_inicial',  label: 'Montagem Inicial',     cor: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
@@ -130,6 +131,7 @@ const IconCheck = () => (
 export default function FabricacaoPage() {
   const [itens, setItens] = useState<ItemFabricacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aba, setAba] = useState<'etapas' | 'acessorios'>('etapas');
   const [advancing, setAdvancing] = useState<string | null>(null);
   const [filtroCodigo, setFiltroCodigo] = useState('');
   const [filtroEtapa, setFiltroEtapa] = useState('');
@@ -323,6 +325,30 @@ export default function FabricacaoPage() {
   });
 
   const itensPorEtapa = (etapaKey: string) => itensFiltrados.filter(it => it.etapa_fabricacao === etapaKey);
+
+  const barraAbas = (
+    <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', borderBottom: '1px solid var(--borda)' }}>
+      {([['etapas', 'Etapas'], ['acessorios', 'Montagem de Acessórios']] as const).map(([key, rotulo]) => (
+        <button key={key} onClick={() => setAba(key)}
+          style={{ padding: '7px 14px', fontSize: '12px', fontWeight: aba === key ? '700' : '500', cursor: 'pointer', border: 'none', borderBottom: `2px solid ${aba === key ? 'var(--ouro)' : 'transparent'}`, backgroundColor: 'transparent', color: aba === key ? 'var(--texto)' : 'var(--texto-suave)', marginBottom: '-1px' }}>
+          {rotulo}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (aba === 'acessorios') {
+    return (
+      <div style={{ padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: 'var(--raio-sm)', backgroundColor: 'var(--marca)', color: 'var(--ouro-claro)' }}><Factory size={15} strokeWidth={1.75} aria-hidden="true" /></span>
+          <h1 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Etapas da Produção</h1>
+        </div>
+        {barraAbas}
+        <MontagemAcessorios />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -629,6 +655,8 @@ export default function FabricacaoPage() {
         <h1 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--texto)', margin: 0 }}>Etapas da Produção</h1>
         <span style={{ fontSize: '12px', color: '#94a3b8' }}>({itensFiltrados.length} item(s))</span>
       </div>
+
+      {barraAbas}
 
       {/* Filtros */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '10px', marginBottom: '12px', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--borda)' }}>
